@@ -1,4 +1,3 @@
-#pragma once
 #ifndef UTTERANCES_H
 #define UTTERANCES_H
 

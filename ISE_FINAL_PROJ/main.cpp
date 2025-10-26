@@ -2,6 +2,7 @@
 #include <string>
 #include "utterances.h"
 #include "home.h"
+#include "utilities.h"
 using namespace std;
 
 /// <summary>
@@ -74,45 +75,6 @@ void displayGoodbyeMessage() {
 }
 
 /// <summary>
-/// Trims whitespace from string
-/// </summary>
-/// <param name="str"> input string </param>
-/// <returns> trimmed string </returns>
-string trim(const string& str) {
-    if (str.empty()) {
-        return "";
-    }
-
-    size_t start = 0;
-    size_t end = str.length() - 1;
-
-    // Find first non-whitespace character
-    while (start <= end && isspace(static_cast<unsigned char>(str[start]))) {
-        start++;
-    }
-
-    // Find last non-whitespace character
-    while (end >= start && isspace(static_cast<unsigned char>(str[end]))) {
-        end--;
-    }
-
-    return (start <= end) ? str.substr(start, end - start + 1) : "";
-}
-
-/// <summary>
-/// Converts string to lowercase
-/// </summary>
-/// <param name="str">input string</param>
-/// <returns>lowercase string</returns>
-string toLower(const string& str) {
-    string result = str;
-    for (size_t i = 0; i < result.length(); i++) {
-        result[i] = tolower(static_cast<unsigned char>(result[i]));
-    }
-    return result;
-}
-
-/// <summary>
 /// Handles home loan selection workflow
 /// </summary>
 /// <param name="loans">Array of loans</param>
@@ -182,10 +144,12 @@ void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
     }
     else if (lowerInput == "s" || lowerInput == "c" || lowerInput == "p") {
         displayUnavailableLoanMessage();
+        // Keep inLoanSelection as true
     }
     else {
         cout << Config::CHATBOT_NAME << ": Invalid selection. " << endl;
         displayLoanCategories();
+        // Keep inLoanSelection as true
     }
 }
 
@@ -214,7 +178,7 @@ int main() {
     // Display welcome message
     displayWelcomeMessage();
 
-   
+    // Main application loop
     string userInput;
     bool running = true;
     bool inLoanSelection = false;
@@ -231,7 +195,7 @@ int main() {
             break;
         }
 
-        // Check for loan selection initiation 
+        // Check for loan selection initiation - ONLY "a" is valid, not "aoa"
         if (lowerInput == "a") {
             inLoanSelection = true;
             cout << Config::CHATBOT_NAME << ": "
