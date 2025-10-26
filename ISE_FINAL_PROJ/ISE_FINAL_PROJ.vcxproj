@@ -19,7 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="home.cpp" />
     <ClCompile Include="utterances.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="home.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

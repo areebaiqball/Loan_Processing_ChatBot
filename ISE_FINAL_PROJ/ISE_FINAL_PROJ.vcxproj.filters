@@ -18,5 +18,13 @@
     <ClCompile Include="utterances.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="home.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="home.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
