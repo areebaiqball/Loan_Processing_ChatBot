@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ISE_FINAL_PROJ.cpp">
+    <ClCompile Include="utterances.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
