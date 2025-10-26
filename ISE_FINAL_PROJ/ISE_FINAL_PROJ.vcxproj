@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="home.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="utterances.cpp" />
   </ItemGroup>
   <ItemGroup>
