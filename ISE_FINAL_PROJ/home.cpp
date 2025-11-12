@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <iomanip>
 
 // HomeLoan class implementation
 HomeLoan::HomeLoan() {
@@ -113,9 +114,9 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
-double HomeLoan::calculateMonthlyInstallment() const {
+long long HomeLoan::calculateMonthlyInstallment() const {
     if (installments <= 0) return 0.0; 
-    double remainingAmount = static_cast<double>(price - downPayment);
+    long long remainingAmount = (price - downPayment);
     return remainingAmount / installments;
 }
 /// <summary>
@@ -136,12 +137,13 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
         if (loans[i].getArea() == areaName) {
             found = true;
             optionCount++;
+            long long monthlyInstallment = static_cast<long long>(loans[i].calculateMonthlyInstallment());
             cout << "Option " << optionCount << ":" << endl;
             cout << "  Size: " << loans[i].getSize() << endl;
             cout << "  Installments: " << loans[i].getInstallments() << " months" << endl;
             cout << "  Total Price: PKR " << loans[i].getPrice() << endl;
             cout << "  Down Payment: PKR " << loans[i].getDownPayment() << endl;
-            cout << "  Monthly Installment: PKR " << loans[i].calculateMonthlyInstallment() << endl;
+            cout << "  Monthly Installment: PKR " << monthlyInstallment << endl;
                
             cout << "----------------------------------------" << endl;
         }
@@ -152,4 +154,84 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
     }
 
     return found;
+}
+
+/// <summary>
+/// Displays detailed installment plan for the loan
+/// </summary>
+void HomeLoan::displayInstallmentPlan() const {
+    long long monthlyInstallment = static_cast<long long>(calculateMonthlyInstallment());
+    long long remainingBalance = getPrice() - getDownPayment();
+
+    cout << endl << "  INSTALLMENT PLAN DETAILS" << endl;
+    cout << "========================================" << endl;
+    cout << "Property Details:" << endl;
+    cout << "  Area: " << getArea() << endl;
+    cout << "  Size: " << getSize() << endl;
+    cout << "  Total Price: PKR " << getPrice() << endl;
+    cout << "  Down Payment: PKR " << getDownPayment() << endl;
+    cout << "  Loan Amount: PKR " << remainingBalance << endl;
+    cout << "  Installment Period: " << getInstallments() << " months" << endl;
+    cout << "  Monthly Installment: PKR " << monthlyInstallment << endl;
+    cout << "========================================" << endl << endl;
+
+    cout << "Monthly Payment Schedule:" << endl;
+    cout << "+-------+----------------+---------------+" << endl;
+    cout << "| Month |  Payment Due   | Remaining Bal |" << endl;
+    cout << "+-------+----------------+---------------+" << endl;
+
+    long long currentBalance = remainingBalance;
+
+    // Display ALL months without skipping any
+    for (int month = 1; month <= getInstallments(); month++) {
+        long long paymentDue =monthlyInstallment;
+
+        // For the last month, adjust payment to clear remaining balance
+        if (month == getInstallments()) {
+            paymentDue = currentBalance;
+        }
+
+        cout << "| " << setw(5) << month << " | PKR " << setw(10) << paymentDue
+            << " | PKR " << setw(10) << (currentBalance - paymentDue) << " |" << endl;
+
+        currentBalance -= paymentDue;
+        if (currentBalance < 0) currentBalance = 0;
+    }
+
+    cout << "+-------+----------------+---------------+" << endl << endl;
+
+    // Display summary with proper formatting
+    long long totalPayment = getDownPayment() + (monthlyInstallment * getInstallments());
+    long long totalInstallments = monthlyInstallment * getInstallments();
+
+    cout << "Payment Summary:" << endl;
+    cout << "  Total Payment: PKR " << totalPayment << endl;
+    cout << "  Down Payment: PKR " << getDownPayment() << endl;
+    cout << "  Total Installments: PKR " << totalInstallments << endl;
+}
+/// <summary>
+/// Displays installment plan for specific loan option
+/// </summary>
+/// <param name="loans">Array of loans</param>
+/// <param name="size">Array size</param>
+/// <param name="areaNumber">Area identifier</param>
+/// <param name="optionNumber">Selected option number</param>
+/// <returns>True if option found, false otherwise</returns>
+bool displayInstallmentPlanForOption(const HomeLoan loans[], int size,
+    const string& areaNumber, int optionNumber) {
+    string areaName = "Area " + areaNumber;
+    int currentOption = 0;
+
+    for (int i = 0; i < size; i++) {
+        if (loans[i].getArea() == areaName) {
+            currentOption++;
+            if (currentOption == optionNumber) {
+                loans[i].displayInstallmentPlan();
+                return true;
+            }
+        }
+    }
+
+    cout << "Invalid option number. Please try again." << endl;
+    return false;
 }

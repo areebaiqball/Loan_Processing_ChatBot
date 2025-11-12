@@ -75,7 +75,7 @@ void displayGoodbyeMessage() {
 }
 
 /// <summary>
-/// Handles home loan selection workflow
+/// Handles home loan selection workflow with installment plan option
 /// </summary>
 /// <param name="loans">Array of loans</param>
 /// <param name="loanCount">Number of loans</param>
@@ -109,8 +109,73 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount,
             bool hasData = displayHomeLoanOptions(loans, loanCount, areaInput);
 
             if (hasData) {
-                cout << endl << "Press X to exit or any other key to return to main menu." << endl;
-                validArea = true;
+                // Ask if user wants to see installment plan
+                cout << endl << Config::CHATBOT_NAME << ": "
+                    << "Would you like to see the detailed installment plan? Press Y for Yes, N for No" << endl;
+
+                bool waitingForPlanResponse = true;
+                while (waitingForPlanResponse && running) {
+                    cout << "You: ";
+                    getline(cin, userInput);
+
+                    string planInput = toLower(trim(userInput));
+
+                    if (planInput == Config::EXIT_COMMAND) {
+                        displayGoodbyeMessage();
+                        running = false;
+                        return;
+                    }
+                    else if (planInput == "y" || planInput == "yes") {
+                        // Ask for option number
+                        cout << Config::CHATBOT_NAME << ": Please enter the option number (1, 2, 3, etc.) to see detailed installment plan:" << endl;
+
+                        bool waitingForOption = true;
+                        while (waitingForOption && running) {
+                            cout << "You: ";
+                            getline(cin, userInput);
+
+                            string optionInput = trim(userInput);
+                            string lowerOptionInput = toLower(optionInput);
+
+                            if (lowerOptionInput == Config::EXIT_COMMAND) {
+                                displayGoodbyeMessage();
+                                running = false;
+                                return;
+                            }
+
+                            try {
+                                int optionNumber = stoi(optionInput);
+                                if (optionNumber > 0) {
+                                    bool planDisplayed = displayInstallmentPlanForOption(loans, loanCount, areaInput, optionNumber);
+                                    if (planDisplayed) {
+                                        waitingForOption = false;
+                                        waitingForPlanResponse = false;
+                                        validArea = true;
+                                    }
+                                }
+                                else {
+                                    cout << Config::CHATBOT_NAME << ": Please enter a valid positive option number:" << endl;
+                                }
+                            }
+                            catch (const exception& e) {
+                                cout << Config::CHATBOT_NAME << ": Please enter a valid option number:" << endl;
+                            }
+                        }
+                    }
+                    else if (planInput == "n" || planInput == "no") {
+                        waitingForPlanResponse = false;
+                        validArea = true;
+                    }
+                    else {
+                        cout << Config::CHATBOT_NAME << ": Please enter Y for Yes or N for No:" << endl;
+                    }
+                }
+
+                if (validArea) {
+                    cout << endl << "Press X to exit or any other key to return to main menu." << endl;
+                    return;
+
+                }
             }
             else {
                 cout << Config::CHATBOT_NAME << ": Please select another area (1, 2, 3, or 4) or press X to exit:" << endl;
