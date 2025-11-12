@@ -112,6 +112,11 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
+double HomeLoan::calculateMonthlyInstallment() const {
+    if (installments <= 0) return 0.0; 
+    double remainingAmount = static_cast<double>(price - downPayment);
+    return remainingAmount / installments;
+}
 /// <summary>
 /// Displays home loan options for area
 /// </summary>
@@ -135,6 +140,8 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
             cout << "  Installments: " << loans[i].getInstallments() << " months" << endl;
             cout << "  Total Price: PKR " << loans[i].getPrice() << endl;
             cout << "  Down Payment: PKR " << loans[i].getDownPayment() << endl;
+            cout << "  Monthly Installment: PKR " << loans[i].calculateMonthlyInstallment() << endl;
+               
             cout << "----------------------------------------" << endl;
         }
     }

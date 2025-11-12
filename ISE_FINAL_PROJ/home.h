@@ -33,6 +33,8 @@ public:
     void setInstallments(int inst);
     void setPrice(long long p);
     void setDownPayment(long long dp);
+    double calculateMonthlyInstallment() const;
+
 };
 
 /// <summary>
@@ -52,5 +54,8 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename);
 /// <param name="areaNumber">Area identifier</param>
 /// <returns>True if data found, false otherwise</returns>
 bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber);
-
+/// <summary>
+/// Calculates the monthly installment
+/// </summary>
+/// <returns>Monthly installment amount</returns>
 #endif
