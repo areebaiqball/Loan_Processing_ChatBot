@@ -85,5 +85,17 @@ inline vector<string> splitString(const string& line, char delimiter) {
 
     return tokens;
 }
+/// <summary>
+/// Removes commas from a numeric string
+/// </summary>
+/// <param name="numStr">String containing digits and commas</param>
+/// <returns>String with commas removed</returns>
+inline string removeCommas(const string& numStr) {
+    string result = "";
+    for (char ch : numStr) {
+        if (ch != ',') result += ch;
+    }
+    return result;
+}
 
 #endif

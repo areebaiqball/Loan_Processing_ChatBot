@@ -92,9 +92,10 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
             try {
                 loans[count].setArea(tokens[0]);
                 loans[count].setSize(tokens[1]);
-                loans[count].setInstallments(stoi(tokens[2]));
-                loans[count].setPrice(stoll(tokens[3]));
-                loans[count].setDownPayment(stoll(tokens[4]));
+                loans[count].setInstallments(stoi(removeCommas(tokens[2])));
+                loans[count].setPrice(stoll(removeCommas(tokens[3])));
+                loans[count].setDownPayment(stoll(removeCommas(tokens[4])));
+
                 count++;
             }
             catch (const exception& e) {
