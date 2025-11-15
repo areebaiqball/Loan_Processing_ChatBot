@@ -1,8 +1,10 @@
-#include <iostream>
+﻿#include <iostream>
 #include <string>
 #include "utterances.h"
 #include "home.h"
 #include "utilities.h"
+#include "application.h"
+#include "application_collector.h"
 using namespace std;
 
 /// <summary>
@@ -186,21 +188,39 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount,
         }
     }
 }
+/// <summary>
+/// Handles loan application collection workflow
+/// </summary>
+/// <param name="collector">Application collector instance</param>
+/// <param name="running">Reference to running flag</param>
+void handleLoanApplication(ApplicationCollector& collector, bool& running) {
+    cout << Config::CHATBOT_NAME << ": " << "Starting loan application process..." << endl;
+    cout << "I'll guide you through the application step by step." << endl;
+    cout << "You can type 'cancel' at any time to exit." << endl << endl;
 
+    try {
+        LoanApplication application = collector.collectCompleteApplication();
+        cout << Config::CHATBOT_NAME << ": " << " Application collected successfully!" << endl;
+        cout << "Your application is ready for submission." << endl;
+        cout << "Application ID: " << application.getApplicationId() << endl; // Will be set in LPC-14
+
+        // TODO: Save application in LPC-14
+        // saveLoanApplication(application, Config::APPLICATIONS_FILE);
+
+    }
+    catch (const exception& e) {
+        cout << Config::CHATBOT_NAME << ": " << "Application process cancelled: " << e.what() << endl;
+    }
+
+    cout << endl << "Press X to exit or any other key to return to main menu." << endl;
+}
 /// <summary>
 /// Handles loan type selection workflow
 /// </summary>
-/// <param name="loans">Array of loans</param>
-/// <param name="loanCount">Number of loans</param>
-/// <param name="utterances">Array of utterances</param>
-/// <param name="utteranceCount">Number of utterances</param>
-/// <param name="running">Reference to running flag</param>
-/// <param name="inLoanSelection">Reference to loan selection state</param>
-/// <param name="userInput">Current user input</param>
 void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
     const Utterance utterances[], int utteranceCount,
     bool& running, bool& inLoanSelection,
-    const string& userInput) {
+    const string& userInput, ApplicationCollector& collector) {  // ADD collector parameter
     string lowerInput = toLower(trim(userInput));
 
     if (lowerInput == "h") {
@@ -208,11 +228,33 @@ void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
         inLoanSelection = false;
     }
     else if (lowerInput == "s" || lowerInput == "c" || lowerInput == "p") {
-        displayUnavailableLoanMessage();
-        // Keep inLoanSelection as true
+        string loanType = (lowerInput == "c" ? "car" : lowerInput == "s" ? "scooter" : "personal");
+        string loanDetails = (lowerInput == "c" ? "Car Loan" : lowerInput == "s" ? "Scooter Loan" : "Personal Loan");
+
+        // Show loan type confirmation and start application
+        cout << Config::CHATBOT_NAME << ": " << "You selected " << loanType << " loan." << endl;
+        cout << "Would you like to proceed with the application? (yes/no): ";
+
+        string confirmation;
+        getline(cin, confirmation);
+        confirmation = toLower(trim(confirmation));
+
+        if (confirmation == "yes" || confirmation == "y") {
+            // Start application for the selected loan type
+            LoanApplication application = collector.collectApplicationForLoan(loanType, loanDetails);
+            // TODO: Save application in LPC-14
+            cout << Config::CHATBOT_NAME << ": " << "✅ " << loanType << " loan application completed!" << endl;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": " << "Application cancelled. Returning to loan selection." << endl;
+            displayLoanCategories();
+            return; // Stay in loan selection
+        }
+
+        inLoanSelection = false;
     }
     else {
-        cout << Config::CHATBOT_NAME << ": Invalid selection. " << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Invalid selection. " << endl;
         displayLoanCategories();
         // Keep inLoanSelection as true
     }
@@ -247,6 +289,7 @@ int main() {
     string userInput;
     bool running = true;
     bool inLoanSelection = false;
+    ApplicationCollector collector;
 
     while (running) {
         cout << "You: ";
@@ -267,15 +310,16 @@ int main() {
                 << getResponse(utterances, utteranceCount, userInput) << endl;
             continue;
         }
+       
 
-        // Handle loan selection workflow
+       
         if (inLoanSelection) {
             handleLoanTypeSelection(homeLoans, loanCount, utterances,
-                utteranceCount, running, inLoanSelection, userInput);
+                utteranceCount, running, inLoanSelection, userInput,collector);
             continue;
         }
 
-        // Default response for invalid input at main level
+        
         cout << Config::CHATBOT_NAME << ": "
             << getResponse(utterances, utteranceCount, userInput) << endl;
     }
