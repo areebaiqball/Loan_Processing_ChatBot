@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <sstream>
 using namespace std;
 
 /// <summary>
@@ -26,6 +27,43 @@ public:
 };
 
 /// <summary>
+/// Validation result with detailed error information
+/// </summary>
+struct ValidationResult {
+    bool isValid;
+    vector<string> errors;
+    vector<string> warnings;
+
+    ValidationResult() : isValid(true) {}
+
+    void addError(const string& error) {
+        errors.push_back(error);
+        isValid = false;
+    }
+
+    void addWarning(const string& warning) {
+        warnings.push_back(warning);
+    }
+
+    string getReport() const {
+        stringstream ss;
+        if (!isValid) {
+            ss << "VALIDATION FAILED:" << endl;
+            for (const auto& error : errors) {
+                ss << " " << error << endl;
+            }
+        }
+        for (const auto& warning : warnings) {
+            ss << " " << warning << endl;
+        }
+        if (isValid && warnings.empty()) {
+            ss << "All validations passed!" << endl;
+        }
+        return ss.str();
+    }
+};
+
+/// <summary>
 /// Represents an existing loan for an applicant
 /// </summary>
 struct ExistingLoan {
@@ -35,6 +73,18 @@ struct ExistingLoan {
     long long amountDue;
     string bankName;
     string loanCategory;
+
+    /// <summary>
+    /// Validates existing loan data
+    /// </summary>
+    bool validate() const {
+        if (bankName.empty()) return false;
+        if (loanCategory.empty()) return false;
+        if (totalAmount < 0 || amountReturned < 0 || amountDue < 0) return false;
+        if (amountReturned > totalAmount) return false;
+        if (amountDue > totalAmount) return false;
+        return true;
+    }
 };
 
 /// <summary>
@@ -46,6 +96,18 @@ struct Reference {
     string cnicIssueDate;
     string phoneNumber;
     string email;
+
+    /// <summary>
+    /// Validates reference data
+    /// </summary>
+    bool validate() const {
+        if (name.empty() || name.length() > 100) return false;
+        if (cnic.length() != 13) return false;
+        for (char c : cnic) {
+            if (!isdigit(static_cast<unsigned char>(c))) return false;
+        }
+        return true;
+    }
 };
 
 /// <summary>
@@ -90,6 +152,18 @@ private:
     string cnicBackImagePath;
     string electricityBillImagePath;
     string salarySlipImagePath;
+
+    // Private validation methods
+    bool validateCNICWithChecksum(const string& cnic) const;
+    bool validateEmailFormat(const string& email) const;
+    bool validatePakistanPhone(const string& phone) const;
+    bool validateDateLogic(const string& date, const string& fieldName, ValidationResult& result) const;
+    bool validateApplicantAge(const string& cnic, ValidationResult& result) const;
+    void validatePersonalInfo(ValidationResult& result) const;
+    void validateEmploymentAndFinancialInfo(ValidationResult& result) const;
+    void validateExistingLoans(ValidationResult& result) const;
+    void validateReferences(ValidationResult& result) const;
+    void validateBusinessRules(ValidationResult& result) const;
 
 public:
     // Constructors
@@ -150,6 +224,12 @@ public:
     void addExistingLoan(const ExistingLoan& loan);
     void clearExistingLoans();
     int getExistingLoansCount() const;
+
+
+    ValidationResult validateCompleteApplication() const;
+    ValidationResult validateForLoanType(const string& loanType, long long loanAmount) const;
+    bool validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const;
+    bool validateDebtToIncomeRatio(ValidationResult& result) const;
 };
 
 #endif

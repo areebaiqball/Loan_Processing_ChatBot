@@ -253,7 +253,7 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
                 
                 loan.totalAmount = getValidatedNumeric("Total loan amount (PKR without commas): ", "Total loan amount", 0, 1000000000);
              
-                loan.amountReturned = getValidatedNumeric("Amount returned so far (PKR without commas): ", "Amount returned", 0, loan.totalAmount, );
+                loan.amountReturned = getValidatedNumeric("Amount returned so far (PKR without commas): ", "Amount returned", 0, loan.totalAmount);
               
                 loan.amountDue = getValidatedNumeric("Amount still due (PKR without commas): ", "Amount due", 0, loan.totalAmount);
                

@@ -1,5 +1,13 @@
 #include "application.h"
-#include <algorithm>
+#include "utilities.h"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <ctime>
+#include <vector>
+#include <string>
+
+using namespace std;
 
 /// <summary>
 /// Default constructor 
@@ -135,25 +143,40 @@ void LoanApplication::setCnicExpiryDate(const string& date) {
 
 void LoanApplication::setEmploymentStatus(const string& status) {
     vector<string> validStatuses = { "Self-employed", "Salaried", "Retired", "Unemployed" };
-    if (find(validStatuses.begin(), validStatuses.end(), status) == validStatuses.end()) {
-        throw ValidationException("Invalid employment status");
+    bool valid = false;
+    for (const auto& s : validStatuses) {
+        if (s == status) {
+            valid = true;
+            break;
+        }
     }
+    if (!valid) throw ValidationException("Invalid employment status");
     employmentStatus = status;
 }
 
 void LoanApplication::setMaritalStatus(const string& status) {
     vector<string> validStatuses = { "Single", "Married", "Divorced", "Widowed" };
-    if (find(validStatuses.begin(), validStatuses.end(), status) == validStatuses.end()) {
-        throw ValidationException("Invalid marital status");
+    bool valid = false;
+    for (const auto& s : validStatuses) {
+        if (s == status) {
+            valid = true;
+            break;
+        }
     }
+    if (!valid) throw ValidationException("Invalid marital status");
     maritalStatus = status;
 }
 
 void LoanApplication::setGender(const string& gen) {
     vector<string> validGenders = { "Male", "Female", "Other" };
-    if (find(validGenders.begin(), validGenders.end(), gen) == validGenders.end()) {
-        throw ValidationException("Invalid gender");
+    bool valid = false;
+    for (const auto& g : validGenders) {
+        if (g == gen) {
+            valid = true;
+            break;
+        }
     }
+    if (!valid) throw ValidationException("Invalid gender");
     gender = gen;
 }
 
@@ -238,3 +261,4 @@ void LoanApplication::clearExistingLoans() {
 int LoanApplication::getExistingLoansCount() const {
     return existingLoans.size();
 }
+
