@@ -261,4 +261,100 @@ void LoanApplication::clearExistingLoans() {
 int LoanApplication::getExistingLoansCount() const {
     return existingLoans.size();
 }
+ValidationResult LoanApplication::validateExistingLoans() const {
+    ValidationResult result;
 
+    for (size_t i = 0; i < existingLoans.size(); i++) {
+        const ExistingLoan& loan = existingLoans[i];
+
+        // Validate loan amounts consistency
+        if (loan.amountReturned + loan.amountDue != loan.totalAmount) {
+            result.addError("Loan " + to_string(i + 1) + ": Amount returned + amount due should equal total amount");
+        }
+
+        if (loan.amountReturned > loan.totalAmount) {
+            result.addError("Loan " + to_string(i + 1) + ": Amount returned cannot exceed total loan amount");
+        }
+
+        if (loan.amountDue > loan.totalAmount) {
+            result.addError("Loan " + to_string(i + 1) + ": Amount due cannot exceed total loan amount");
+        }
+
+        if (!loan.validate()) {
+            result.addError("Loan " + to_string(i + 1) + ": Invalid loan data");
+        }
+    }
+
+    return result;
+}
+ValidationResult LoanApplication::validateReferences() const {
+    ValidationResult result;
+
+  
+    if (!reference1.validate()) {
+        result.addError("Reference 1: Invalid reference data");
+    }
+
+   
+    if (!reference2.validate()) {
+        result.addError("Reference 2: Invalid reference data");
+    }
+
+   
+    if (reference1.cnic == reference2.cnic) {
+        result.addError("References must be different people (same CNIC detected)");
+    }
+
+    return result;
+}
+bool LoanApplication::validateDebtToIncomeRatio(ValidationResult& result) const {
+    if (annualIncome <= 0) {
+        result.addError("Annual income must be positive to calculate debt ratio");
+        return false;
+    }
+
+    long long totalExistingDebt = 0;
+    for (const auto& loan : existingLoans) {
+        if (loan.isActive) {
+            totalExistingDebt += loan.amountDue;
+        }
+    }
+
+    double debtRatio = static_cast<double>(totalExistingDebt) / annualIncome;
+
+    if (debtRatio > 0.5) { // 50% debt-to-income ratio threshold
+        result.addWarning("High debt-to-income ratio: " + to_string(static_cast<int>(debtRatio * 100)) + "%");
+        return false;
+    }
+
+    return true;
+}
+ValidationResult LoanApplication::validateCompleteApplication() const {
+    ValidationResult result;
+
+    // Validate personal information (you can add more specific validations)
+    if (fullName.empty()) result.addError("Full name is required");
+    if (cnicNumber.empty()) result.addError("CNIC is required");
+    if (contactNumber.empty()) result.addError("Contact number is required");
+
+    // Validate existing loans
+    ValidationResult loansValidation = validateExistingLoans();
+    if (!loansValidation.isValid) {
+        for (const auto& error : loansValidation.errors) {
+            result.addError(error);
+        }
+    }
+
+    
+    ValidationResult refsValidation = validateReferences();
+    if (!refsValidation.isValid) {
+        for (const auto& error : refsValidation.errors) {
+            result.addError(error);
+        }
+    }
+
+ 
+    validateDebtToIncomeRatio(result);
+
+    return result;
+}

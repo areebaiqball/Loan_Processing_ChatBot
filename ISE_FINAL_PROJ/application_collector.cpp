@@ -1,4 +1,4 @@
-#include "application_collector.h"
+﻿#include "application_collector.h"
 #include <iomanip>
 #include <sstream>
 
@@ -232,46 +232,81 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
     cout << endl << "=== EXISTING LOANS INFORMATION ===" << endl;
 
     try {
-        cout << Config::CHATBOT_NAME << ": " << "Do you have any existing loans? (yes/no): ";
+        cout << Config::CHATBOT_NAME << ": " << "Do you have any existing loans from banks or financial institutions? (yes/no): ";
         string hasLoans;
         getline(cin, hasLoans);
         hasLoans = toLower(trim(hasLoans));
 
         if (hasLoans == "yes" || hasLoans == "y") {
             bool addMoreLoans = true;
+            int loanCount = 0;
 
-            while (addMoreLoans) {
+            while (addMoreLoans && loanCount < 10) { // Limit to 10 loans
+                loanCount++;
                 ExistingLoan loan;
 
-                cout << endl << "--- Existing Loan Details ---" << endl;
+                cout << endl << "--- Existing Loan #" << loanCount << " ---" << endl;
 
-                cout << Config::CHATBOT_NAME << ": " << "Is this loan currently active? (yes/no): ";
-                string activeInput;
-                getline(cin, activeInput);
-                loan.isActive = (toLower(trim(activeInput)) == "yes" || toLower(trim(activeInput)) == "y");
+                // Loan active status
+                vector<string> activeOptions = { "Yes, this loan is currently active", "No, this loan is closed" };
+                string activeChoice = getSelectionFromOptions("Is this loan currently active?: ", activeOptions);
+                loan.isActive = (activeChoice.find("Yes") != string::npos);
 
-                
-                loan.totalAmount = getValidatedNumeric("Total loan amount (PKR without commas): ", "Total loan amount", 0, 1000000000);
-             
-                loan.amountReturned = getValidatedNumeric("Amount returned so far (PKR without commas): ", "Amount returned", 0, loan.totalAmount);
-              
-                loan.amountDue = getValidatedNumeric("Amount still due (PKR without commas): ", "Amount due", 0, loan.totalAmount);
-               
-                loan.bankName = getValidatedString("Bank name: ", "Bank name", 1, 100);
-                 
-               vector<string> loanCategories = { "Car", "Home", "Bike" };
-                loan.loanCategory = getSelectionFromOptions("Loan category: ", loanCategories);
-               
+                // Loan amounts with better validation
+                loan.totalAmount = getValidatedNumeric("Total original loan amount (PKR): ", "Total loan amount", 1000, 1000000000);
+
+                if (loan.isActive) {
+                    loan.amountReturned = getValidatedNumeric("Amount paid back so far (PKR): ", "Amount returned", 0, loan.totalAmount);
+                    loan.amountDue = getValidatedNumeric("Remaining amount to pay (PKR): ", "Amount due", 0, loan.totalAmount);
+
+                    // Auto-calculate if amounts don't add up
+                    if (loan.amountReturned + loan.amountDue != loan.totalAmount) {
+                        cout << Config::CHATBOT_NAME << ": " << "Note: The amounts don't add up correctly." << endl;
+                        cout << "Total: " << loan.totalAmount << " = Paid: " << loan.amountReturned << " + Due: " << loan.amountDue << endl;
+                        cout << "Auto-calculating due amount as: " << (loan.totalAmount - loan.amountReturned) << endl;
+                        loan.amountDue = loan.totalAmount - loan.amountReturned;
+                    }
+                }
+                else {
+                    loan.amountReturned = loan.totalAmount;
+                    loan.amountDue = 0;
+                    cout << Config::CHATBOT_NAME << ": " << "Marking as fully paid since loan is closed." << endl;
+                }
+
+                loan.bankName = getValidatedString("Bank or financial institution name: ", "Bank name", 2, 100);
+
+                vector<string> loanCategories = { "Car Loan", "Home Loan", "Personal Loan", "Business Loan", "Education Loan", "Other" };
+                loan.loanCategory = getSelectionFromOptions("Type of loan: ", loanCategories);
+
+                // Validate this loan before adding
+                if (!loan.validate()) {
+                    cout << Config::CHATBOT_NAME << ": " << "Invalid loan information. Please re-enter this loan." << endl;
+                    loanCount--;
+                    continue;
+                }
+
                 application.addExistingLoan(loan);
+                cout << Config::CHATBOT_NAME << ": " << "✓ Loan #" << loanCount << " recorded successfully!" << endl;
 
-                cout << Config::CHATBOT_NAME << ": " << "Do you have another existing loan to add? (yes/no): ";
-                string anotherLoan;
-                getline(cin, anotherLoan);
-                addMoreLoans = (toLower(trim(anotherLoan)) == "yes" || toLower(trim(anotherLoan)) == "y");
+                if (loanCount < 10) {
+                    cout << Config::CHATBOT_NAME << ": " << "Do you have another existing loan to add? (yes/no): ";
+                    string anotherLoan;
+                    getline(cin, anotherLoan);
+                    addMoreLoans = (toLower(trim(anotherLoan)) == "yes" || toLower(trim(anotherLoan)) == "y");
+                }
+                else {
+                    cout << Config::CHATBOT_NAME << ": " << "Maximum of 10 loans reached." << endl;
+                    addMoreLoans = false;
+                }
             }
+
+            cout << Config::CHATBOT_NAME << ": " << "Total " << loanCount << " loan(s) recorded." << endl;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": " << "No existing loans recorded." << endl;
         }
 
-        cout << Config::CHATBOT_NAME << ": " << "Existing loans information collected successfully!" << endl;
+        cout << Config::CHATBOT_NAME << ": " << " Existing loans information completed!" << endl;
         return true;
 
     }

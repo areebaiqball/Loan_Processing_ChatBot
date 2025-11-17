@@ -97,15 +97,21 @@ struct Reference {
     string phoneNumber;
     string email;
 
-    /// <summary>
-    /// Validates reference data
-    /// </summary>
     bool validate() const {
         if (name.empty() || name.length() > 100) return false;
         if (cnic.length() != 13) return false;
         for (char c : cnic) {
             if (!isdigit(static_cast<unsigned char>(c))) return false;
         }
+        // Validate CNIC issue date format (DD-MM-YYYY)
+        if (cnicIssueDate.length() != 10 || cnicIssueDate[2] != '-' || cnicIssueDate[5] != '-') {
+            return false;
+        }
+        // Basic phone validation
+        if (phoneNumber.length() < 10 || phoneNumber.length() > 15) return false;
+        // Basic email validation
+        if (email.find('@') == string::npos || email.find('.') == string::npos) return false;
+
         return true;
     }
 };
@@ -230,6 +236,10 @@ public:
     ValidationResult validateForLoanType(const string& loanType, long long loanAmount) const;
     bool validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const;
     bool validateDebtToIncomeRatio(ValidationResult& result) const;
+    ValidationResult validateExistingLoans() const;
+    ValidationResult validateReferences() const;
+    
+    
 };
 
 #endif
