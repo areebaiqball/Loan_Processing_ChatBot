@@ -358,3 +358,76 @@ ValidationResult LoanApplication::validateCompleteApplication() const {
 
     return result;
 }
+
+ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
+    ValidationResult result;
+
+    // Employment status validation
+    if (employmentStatus.empty()) {
+        result.addError("Employment status is required");
+    }
+
+    // Income validation based on employment status
+    if (employmentStatus == "Unemployed" && annualIncome > 0) {
+        result.addWarning("Applicant is unemployed but has reported income");
+    }
+
+    if (employmentStatus != "Unemployed" && annualIncome < 200000) {
+        result.addWarning("Reported income seems low for employment status");
+    }
+
+    // Bill validation
+    if (avgElectricityBill < 0 || currentElectricityBill < 0) {
+        result.addError("Electricity bills cannot be negative");
+    }
+
+    if (currentElectricityBill > avgElectricityBill * 3) {
+        result.addWarning("Current electricity bill is unusually high compared to average");
+    }
+
+    // Dependents validation
+    if (numberOfDependents < 0) {
+        result.addError("Number of dependents cannot be negative");
+    }
+
+    if (numberOfDependents > 10 && annualIncome < 1000000) {
+        result.addWarning("Many dependents with relatively low income");
+    }
+
+    return result;
+}
+
+bool LoanApplication::validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const {
+    if (annualIncome <= 0) {
+        result.addError("Annual income must be positive");
+        return false;
+    }
+
+    double incomeToLoanRatio = static_cast<double>(loanAmount) / annualIncome;
+
+    // Different thresholds for different loan types
+    if (loanType == "home" && incomeToLoanRatio > 5.0) {
+        result.addError("Home loan amount cannot exceed 5 times annual income");
+        return false;
+    }
+    else if (loanType == "car" && incomeToLoanRatio > 2.0) {
+        result.addError("Car loan amount cannot exceed 2 times annual income");
+        return false;
+    }
+    else if (loanType == "personal" && incomeToLoanRatio > 1.0) {
+        result.addError("Personal loan amount cannot exceed annual income");
+        return false;
+    }
+
+    // Employment status considerations
+    if (employmentStatus == "Unemployed" && loanAmount > 500000) {
+        result.addError("Loan amount too high for unemployed applicant");
+        return false;
+    }
+
+    if (employmentStatus == "Retired" && loanAmount > 1000000) {
+        result.addWarning("Large loan amount for retired applicant");
+    }
+
+    return true;
+}

@@ -238,7 +238,8 @@ public:
     bool validateDebtToIncomeRatio(ValidationResult& result) const;
     ValidationResult validateExistingLoans() const;
     ValidationResult validateReferences() const;
-    
+    ValidationResult validateEmploymentAndFinancialInfo() const;
+    bool validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const;
     
 };
 

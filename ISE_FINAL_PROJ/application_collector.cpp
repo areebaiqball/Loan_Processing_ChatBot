@@ -5,6 +5,7 @@
 /// <summary>
 /// Main method to collect complete application
 /// </summary>
+/// 
 LoanApplication ApplicationCollector::collectCompleteApplication() {
     LoanApplication application;
 
@@ -13,26 +14,50 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
 
     try {
         // Step 1: Personal Information
+        cout << "STEP 1/5: Personal Information" << endl;
         if (!collectPersonalInfo(application)) {
             throw runtime_error("Personal information collection failed");
         }
 
-        // Step 2: Employment & Financial Information
+        // Step 2: Employment & Financial Information  
+        cout << endl << "STEP 2/5: Employment & Financial Information" << endl;
         if (!collectEmploymentAndFinancialInfo(application)) {
             throw runtime_error("Employment and financial information collection failed");
         }
 
         // Step 3: Existing Loans
+        cout << endl << "STEP 3/5: Existing Loans" << endl;
         if (!collectExistingLoansInfo(application)) {
             throw runtime_error("Existing loans information collection failed");
         }
 
         // Step 4: References
+        cout << endl << "STEP 4/5: References" << endl;
         if (!collectReferencesInfo(application)) {
             throw runtime_error("References information collection failed");
         }
 
-        // Step 5: Confirmation
+        // Step 5: Document Information
+        cout << endl << "STEP 5/5: Document Information" << endl;
+        collectImagePaths(application);
+
+        // Step 6: Final Validation and Confirmation
+        cout << endl << "FINAL STEP: Review and Submit" << endl;
+        ValidationResult validation = application.validateCompleteApplication();
+        if (!validation.isValid) {
+            cout << Config::CHATBOT_NAME << ": " << "Application validation failed:" << endl;
+            cout << validation.getReport() << endl;
+            cout << "Please correct the errors and try again." << endl;
+            throw runtime_error("Application validation failed");
+        }
+
+        // Show warnings if any
+        if (!validation.warnings.empty()) {
+            cout << Config::CHATBOT_NAME << ": " << "Application warnings:" << endl;
+            cout << validation.getReport() << endl;
+            cout << "You may proceed, but please note these warnings." << endl;
+        }
+
         if (!confirmApplication(application)) {
             throw runtime_error("Application cancelled by user");
         }
@@ -162,61 +187,182 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
 /// <summary>
 /// Collects employment and financial details
 /// </summary>
+/// 
 bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& application) {
     cout << endl << "=== EMPLOYMENT & FINANCIAL INFORMATION ===" << endl;
 
     try {
-      
-        vector<string> employmentOptions = { "Self-employed", "Salaried", "Retired", "Unemployed" };
+        // Employment Status with detailed options
+        cout << Config::CHATBOT_NAME << ": " << "Let's collect your employment and financial details." << endl;
+
+        vector<string> employmentOptions = {
+            "Self-employed",
+            "Salaried (Regular Job)",
+            "Retired",
+            "Unemployed"
+        };
         string employmentStatus = getSelectionFromOptions(
-            "Please select your employment status: ",
+            "Please select your current employment status:",
             employmentOptions
         );
         application.setEmploymentStatus(employmentStatus);
 
-        
+        // Employment-specific details
+        if (employmentStatus == "Self-employed") {
+            string businessType = getValidatedString(
+                "Please describe your business/occupation: ",
+                "Business type",
+                2, 100
+            );
+            // You could store this in additional fields if needed
+        }
+        else if (employmentStatus == "Salaried (Regular Job)") {
+            string employerName = getValidatedString(
+                "Please enter your employer's name: ",
+                "Employer name",
+                2, 100
+            );
+            // Store employer name if needed
+        }
+
+        // Personal Details
+        cout << endl << "--- Personal Details ---" << endl;
+
         vector<string> maritalOptions = { "Single", "Married", "Divorced", "Widowed" };
-        string maritalStatus = getSelectionFromOptions("Please select your marital status: ", maritalOptions);
-      
+        string maritalStatus = getSelectionFromOptions(
+            "Please select your marital status:",
+            maritalOptions
+        );
         application.setMaritalStatus(maritalStatus);
 
         vector<string> genderOptions = { "Male", "Female", "Other" };
-        string gender = getSelectionFromOptions("Please select your gender: ", genderOptions);
+        string gender = getSelectionFromOptions(
+            "Please select your gender:",
+            genderOptions
+        );
         application.setGender(gender);
-            
-      
-        cout << "You: ";
-        string dependentsInput;
-        getline(cin, dependentsInput);
 
-        try {
-            int dependents = stoi(trim(dependentsInput));
-            application.setNumberOfDependents(dependents);
-        }
-        catch (...) {
-            cout << Config::CHATBOT_NAME << ": " << "Invalid number. Please enter a valid number of dependents: ";
+        // Number of Dependents with better validation
+        bool validDependents = false;
+        int dependents = 0;
+
+        while (!validDependents) {
+            cout << Config::CHATBOT_NAME << ": " << "Please enter the number of people who depend on you financially: ";
+            string dependentsInput;
             getline(cin, dependentsInput);
-            int dependents = stoi(trim(dependentsInput));
-            application.setNumberOfDependents(dependents);
-        }
+            dependentsInput = trim(dependentsInput);
 
-      
-        long long annualIncome = getValidatedNumeric("Please enter your annual income in PKR (without commas): ", "Annual income", 0, 1000000000);
-      
+            try {
+                dependents = stoi(dependentsInput);
+                if (dependents >= 0 && dependents <= 20) {
+                    validDependents = true;
+                }
+                else {
+                    cout << Config::CHATBOT_NAME << ": " << "Please enter a number between 0 and 20." << endl;
+                }
+            }
+            catch (const exception&) {
+                cout << Config::CHATBOT_NAME << ": " << "Invalid number. Please enter a valid number (0-20): ";
+            }
+        }
+        application.setNumberOfDependents(dependents);
+
+        // Financial Information
+        cout << endl << "--- Financial Information ---" << endl;
+
+        // Annual Income with contextual guidance
+        cout << Config::CHATBOT_NAME << ": " << "Now let's collect your financial information." << endl;
+
+        long long annualIncome = 0;
+        if (employmentStatus == "Unemployed") {
+            cout << Config::CHATBOT_NAME << ": " << "Since you're unemployed, please enter your household income or other sources of income." << endl;
+            annualIncome = getValidatedNumeric(
+                "Annual household/support income (PKR without commas): ",
+                "Annual income",
+                0, 50000000
+            );
+        }
+        else {
+            annualIncome = getValidatedNumeric(
+                "Please enter your annual income in PKR (without commas): ",
+                "Annual income",
+                100000, 50000000  // Minimum 100,000 PKR for employed
+            );
+        }
         application.setAnnualIncome(annualIncome);
 
-        long long avgBill = getValidatedNumeric("Please enter your average monthly electricity bill for last 12 months (PKR without commas): ", "Average electricity bill", 0, 1000000);
-           
-            application.setAvgElectricityBill(avgBill);
+        // Income validation based on employment status
+        if (employmentStatus != "Unemployed" && annualIncome < 200000) {
+            cout << Config::CHATBOT_NAME << ": " << "Note: Your income seems low for your employment status." << endl;
+        }
 
-      
-        long long currentBill = getValidatedNumeric("Please enter your current electricity bill amount (PKR without commas): ", "Current electricity bill", 0, 1000000);
-          
-      
-        application.setCurrentElectricityBill(currentBill);
+        // Electricity Bills with better context
+        cout << endl << "--- Utility Bill Information ---" << endl;
+        cout << Config::CHATBOT_NAME << ": " << "We need information about your electricity bills for address verification." << endl;
 
-        cout << Config::CHATBOT_NAME << ": " << "Employment and financial information collected successfully!" << endl;
-        return true;
+        long long avgElectricityBill = getValidatedNumeric(
+            "Average monthly electricity bill for last 12 months (PKR without commas): ",
+            "Average electricity bill",
+            0, 100000
+        );
+        application.setAvgElectricityBill(avgElectricityBill);
+
+        long long currentElectricityBill = getValidatedNumeric(
+            "Current electricity bill amount (PKR without commas): ",
+            "Current electricity bill",
+            0, 100000
+        );
+        application.setCurrentElectricityBill(currentElectricityBill);
+
+        // Validate bill consistency
+        if (currentElectricityBill > avgElectricityBill * 2) {
+            cout << Config::CHATBOT_NAME << ": " << "Note: Your current bill is significantly higher than your average." << endl;
+        }
+
+        // Additional Financial Information (if needed)
+        if (annualIncome > 1000000) { // For higher income applicants
+            cout << endl << "--- Additional Financial Details ---" << endl;
+
+            vector<string> incomeSourceOptions = {
+                "Salary/Wages",
+                "Business Income",
+                "Investments",
+                "Rental Income",
+                "Other"
+            };
+
+            string primaryIncomeSource = getSelectionFromOptions(
+                "Primary source of income:",
+                incomeSourceOptions
+            );
+
+            // You could store this in additional application fields
+        }
+
+        // Summary and Confirmation
+        cout << endl << "--- Summary ---" << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Let me confirm your employment and financial details:" << endl;
+        cout << "  Employment Status: " << employmentStatus << endl;
+        cout << "  Marital Status: " << maritalStatus << endl;
+        cout << "  Gender: " << gender << endl;
+        cout << "  Dependents: " << dependents << endl;
+        cout << "  Annual Income: PKR " << annualIncome << endl;
+        cout << "  Avg Electricity Bill: PKR " << avgElectricityBill << endl;
+        cout << "  Current Electricity Bill: PKR " << currentElectricityBill << endl;
+
+        cout << Config::CHATBOT_NAME << ": " << "Is this information correct? (yes/no): ";
+        string confirmation;
+        getline(cin, confirmation);
+        confirmation = toLower(trim(confirmation));
+
+        if (confirmation == "yes" || confirmation == "y") {
+            cout << Config::CHATBOT_NAME << ": " << "Employment and financial information collected successfully!" << endl;
+            return true;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": " << "Let's collect this information again." << endl;
+            return collectEmploymentAndFinancialInfo(application); // Recursive retry
+        }
 
     }
     catch (const exception& e) {
@@ -358,25 +504,47 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
 /// <summary>
 /// Displays summary and gets confirmation
 /// </summary>
+
 bool ApplicationCollector::confirmApplication(const LoanApplication& application) {
     cout << endl << "=== APPLICATION SUMMARY ===" << endl;
     cout << "Please review your information:" << endl << endl;
 
-    // Display summary
-    cout << "Personal Information:" << endl;
+    // Personal Information
+    cout << "PERSONAL INFORMATION:" << endl;
     cout << "  Full Name: " << application.getFullName() << endl;
     cout << "  Father's Name: " << application.getFathersName() << endl;
     cout << "  CNIC: " << application.getCnicNumber() << endl;
     cout << "  Contact: " << application.getContactNumber() << endl;
     cout << "  Email: " << application.getEmailAddress() << endl;
+    cout << "  Address: " << application.getPostalAddress() << endl;
 
-    cout << endl << "Employment Information:" << endl;
-    cout << "  Status: " << application.getEmploymentStatus() << endl;
+    // Employment & Financial Information
+    cout << endl << "EMPLOYMENT & FINANCIAL INFORMATION:" << endl;
+    cout << "  Employment Status: " << application.getEmploymentStatus() << endl;
+    cout << "  Marital Status: " << application.getMaritalStatus() << endl;
+    cout << "  Gender: " << application.getGender() << endl;
+    cout << "  Dependents: " << application.getNumberOfDependents() << endl;
     cout << "  Annual Income: PKR " << application.getAnnualIncome() << endl;
+    cout << "  Avg Electricity Bill: PKR " << application.getAvgElectricityBill() << endl;
+    cout << "  Current Electricity Bill: PKR " << application.getCurrentElectricityBill() << endl;
 
-    cout << endl << "Existing Loans: " << application.getExistingLoansCount() << endl;
+    // Existing Loans
+    cout << endl << "EXISTING LOANS: " << application.getExistingLoansCount() << " loan(s)" << endl;
+    auto existingLoans = application.getExistingLoans();
+    for (size_t i = 0; i < existingLoans.size(); i++) {
+        cout << "  Loan " << (i + 1) << ": " << existingLoans[i].bankName
+            << " - PKR " << existingLoans[i].totalAmount
+            << " (" << (existingLoans[i].isActive ? "Active" : "Closed") << ")" << endl;
+    }
 
-    cout << endl << Config::CHATBOT_NAME << ": " << "Do you confirm this information is correct? (yes/no): ";
+    // References
+    Reference ref1 = application.getReference1();
+    Reference ref2 = application.getReference2();
+    cout << endl << "REFERENCES:" << endl;
+    cout << "  Reference 1: " << ref1.name << " (" << ref1.phoneNumber << ")" << endl;
+    cout << "  Reference 2: " << ref2.name << " (" << ref2.phoneNumber << ")" << endl;
+
+    cout << endl << Config::CHATBOT_NAME << ": " << "Do you confirm this information is correct and ready for submission? (yes/no): ";
     string confirmation;
     getline(cin, confirmation);
     confirmation = toLower(trim(confirmation));
@@ -413,6 +581,11 @@ long long ApplicationCollector::getValidatedNumeric(const string& prompt, const 
         getline(cin, input);
         input = removeCommas(trim(input));
 
+        // Allow empty for optional fields with minValue = 0
+        if (input.empty() && minValue == 0) {
+            return 0;
+        }
+
         try {
             long long value = stoll(input);
 
@@ -426,11 +599,21 @@ long long ApplicationCollector::getValidatedNumeric(const string& prompt, const 
                 continue;
             }
 
+            // Additional validation for specific fields
+            if (fieldName.find("income") != string::npos && value > 0 && value < 10000) {
+                cout << Config::CHATBOT_NAME << ": " << "Income seems unusually low. Please confirm this is correct: ";
+                string confirm;
+                getline(cin, confirm);
+                if (toLower(trim(confirm)) != "yes" && toLower(trim(confirm)) != "y") {
+                    continue;
+                }
+            }
+
             return value;
 
         }
         catch (const exception&) {
-            cout << Config::CHATBOT_NAME << ": " << "Invalid number format. Please enter a valid number." << endl;
+            cout << Config::CHATBOT_NAME << ": " << "Invalid number format. Please enter a valid number without commas." << endl;
         }
     }
 }
@@ -626,4 +809,93 @@ void ApplicationCollector::collectLoanSpecificInfo(LoanApplication& application,
     }
 
     cout << Config::CHATBOT_NAME << ": " << loanType << " specific information collected!" << endl;
+}
+
+bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
+    cout << endl << "=== DOCUMENT UPLOAD INFORMATION ===" << endl;
+
+    try {
+        cout << Config::CHATBOT_NAME << ": " << "We need information about your document images." << endl;
+        cout << "Since this is a console application, please provide the file paths where you have saved your document images." << endl;
+        cout << "You will need to upload these images separately to the specified locations." << endl << endl;
+
+        // CNIC Front Image
+        string cnicFrontPath = getImagePath("CNIC Front Side");
+        application.setCnicFrontImagePath(cnicFrontPath);
+
+        // CNIC Back Image
+        string cnicBackPath = getImagePath("CNIC Back Side");
+        application.setCnicBackImagePath(cnicBackPath);
+
+        // Electricity Bill Image
+        string electricityBillPath = getImagePath("Recent Electricity Bill");
+        application.setElectricityBillImagePath(electricityBillPath);
+
+        // Salary Slip Image
+        string salarySlipPath = getImagePath("Salary Slip or Bank Statement");
+        application.setSalarySlipImagePath(salarySlipPath);
+
+        // Show summary of image paths
+        cout << endl << "--- Document Paths Summary ---" << endl;
+        cout << "CNIC Front: " << cnicFrontPath << endl;
+        cout << "CNIC Back: " << cnicBackPath << endl;
+        cout << "Electricity Bill: " << electricityBillPath << endl;
+        cout << "Salary Slip: " << salarySlipPath << endl;
+        cout << endl << "Please ensure these images are available at the specified paths." << endl;
+
+        cout << Config::CHATBOT_NAME << ": " << "Document information collected successfully!" << endl;
+        return true;
+
+    }
+    catch (const exception& e) {
+        cout << Config::CHATBOT_NAME << ": " << "Error in document information: " << e.what() << endl;
+        return false;
+    }
+}
+
+string ApplicationCollector::getImagePath(const string& imageType) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << "Please enter the file path for " << imageType << " image:" << endl;
+        cout << "Example: C:/Users/YourName/Documents/cnic_front.jpg" << endl;
+        cout << "You: ";
+
+        string path;
+        getline(cin, path);
+        path = trim(path);
+
+        // Basic validation
+        if (path.empty()) {
+            cout << Config::CHATBOT_NAME << ": " << "Path cannot be empty. Please enter a valid file path." << endl;
+            continue;
+        }
+
+        // Check if it looks like a file path (has extension)
+        if (path.length() < 5) {
+            cout << Config::CHATBOT_NAME << ": " << "Path seems too short. Please enter a complete file path." << endl;
+            continue;
+        }
+
+        // Check for common image extensions
+        string lowerPath = toLower(path);
+        if (lowerPath.find(".jpg") == string::npos &&
+            lowerPath.find(".jpeg") == string::npos &&
+            lowerPath.find(".png") == string::npos &&
+            lowerPath.find(".pdf") == string::npos) {
+            cout << Config::CHATBOT_NAME << ": " << "Warning: Path doesn't have common image extension (.jpg, .jpeg, .png, .pdf)." << endl;
+        }
+
+        // Confirm with user
+        cout << Config::CHATBOT_NAME << ": " << "You entered: " << path << endl;
+        cout << "Is this correct? (yes/no): ";
+        string confirmation;
+        getline(cin, confirmation);
+        confirmation = toLower(trim(confirmation));
+
+        if (confirmation == "yes" || confirmation == "y") {
+            return path;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": " << "Let's try again." << endl;
+        }
+    }
 }

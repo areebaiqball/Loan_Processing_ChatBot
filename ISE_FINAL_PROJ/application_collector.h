@@ -74,6 +74,9 @@ private:
     /// </summary>
     string getSelectionFromOptions(const string& prompt, const vector<string>& options);
 
+    bool collectImagePaths(LoanApplication& application);
+    string getImagePath(const string& imageType);
+
 public:
     /// <summary>
     /// Main method to collect complete application
