@@ -18,6 +18,8 @@ namespace Config {
     extern const int MAX_LOANS;
     extern const char DELIMITER;
     extern const string EXIT_COMMAND;
+    extern const string APPLICATIONS_FILE;
+    extern const string IMAGES_DIRECTORY;
 }
 
 /// <summary>

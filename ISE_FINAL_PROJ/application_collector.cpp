@@ -1,6 +1,8 @@
 ﻿#include "application_collector.h"
+
 #include <iomanip>
 #include <sstream>
+#include<fstream>
 
 /// <summary>
 /// Main method to collect complete application
@@ -76,39 +78,49 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
 /// <summary>
 /// Collects application for a specific loan type
 /// </summary>
-LoanApplication ApplicationCollector::collectApplicationForLoan(const string& loanType, const string& loanDetails) {
+LoanApplication ApplicationCollector::collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager) {
     cout << Config::CHATBOT_NAME << ": " << "Starting " << loanType << " loan application process..." << endl;
     cout << "Loan Type: " << loanDetails << endl << endl;
 
     LoanApplication application;
 
     try {
-        
+        // Step 1: Personal Information
         if (!collectPersonalInfo(application)) {
             throw runtime_error("Personal information collection failed");
         }
 
-         
+        // Step 2: Employment & Financial Information
         if (!collectEmploymentAndFinancialInfo(application)) {
             throw runtime_error("Employment and financial information collection failed");
         }
 
-        
+        // Step 3: Loan-specific information
         collectLoanSpecificInfo(application, loanType, loanDetails);
 
-        
+        // Step 4: Existing Loans
         if (!collectExistingLoansInfo(application)) {
             throw runtime_error("Existing loans information collection failed");
         }
 
-      
+        // Step 5: References
         if (!collectReferencesInfo(application)) {
             throw runtime_error("References information collection failed");
         }
 
-      
+        // Step 6: Document Images
+        if (!collectImagePaths(application)) {
+            throw runtime_error("Document information collection failed");
+        }
+
+        // Step 7: Confirmation
         if (!confirmApplication(application)) {
             throw runtime_error("Application cancelled by user");
+        }
+
+        // Save the application
+        if (!fileManager.saveApplication(application)) {
+            throw runtime_error("Failed to save application");
         }
 
     }
@@ -810,40 +822,36 @@ void ApplicationCollector::collectLoanSpecificInfo(LoanApplication& application,
 
     cout << Config::CHATBOT_NAME << ": " << loanType << " specific information collected!" << endl;
 }
-
 bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
-    cout << endl << "=== DOCUMENT UPLOAD INFORMATION ===" << endl;
+    cout << endl << "=== DOCUMENT UPLOAD ===" << endl;
 
     try {
-        cout << Config::CHATBOT_NAME << ": " << "We need information about your document images." << endl;
-        cout << "Since this is a console application, please provide the file paths where you have saved your document images." << endl;
-        cout << "You will need to upload these images separately to the specified locations." << endl << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Now we need the file paths for your document images." << endl;
+        cout << "Please make sure the image files exist at the paths you provide." << endl;
+        cout << "The images will be copied to the project's 'images' folder." << endl << endl;
 
         // CNIC Front Image
+        cout << "--- CNIC Front Side ---" << endl;
         string cnicFrontPath = getImagePath("CNIC Front Side");
         application.setCnicFrontImagePath(cnicFrontPath);
 
         // CNIC Back Image
+        cout << "--- CNIC Back Side ---" << endl;
         string cnicBackPath = getImagePath("CNIC Back Side");
         application.setCnicBackImagePath(cnicBackPath);
 
         // Electricity Bill Image
+        cout << "--- Electricity Bill ---" << endl;
         string electricityBillPath = getImagePath("Recent Electricity Bill");
         application.setElectricityBillImagePath(electricityBillPath);
 
         // Salary Slip Image
+        cout << "--- Salary Slip/Bank Statement ---" << endl;
         string salarySlipPath = getImagePath("Salary Slip or Bank Statement");
         application.setSalarySlipImagePath(salarySlipPath);
 
-        // Show summary of image paths
-        cout << endl << "--- Document Paths Summary ---" << endl;
-        cout << "CNIC Front: " << cnicFrontPath << endl;
-        cout << "CNIC Back: " << cnicBackPath << endl;
-        cout << "Electricity Bill: " << electricityBillPath << endl;
-        cout << "Salary Slip: " << salarySlipPath << endl;
-        cout << endl << "Please ensure these images are available at the specified paths." << endl;
-
-        cout << Config::CHATBOT_NAME << ": " << "Document information collected successfully!" << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Document paths recorded successfully!" << endl;
+        cout << "Images will be copied to the 'images' folder when you submit the application." << endl;
         return true;
 
     }
@@ -855,7 +863,7 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
 
 string ApplicationCollector::getImagePath(const string& imageType) {
     while (true) {
-        cout << Config::CHATBOT_NAME << ": " << "Please enter the file path for " << imageType << " image:" << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Enter the full file path for " << imageType << ":" << endl;
         cout << "Example: C:/Users/YourName/Documents/cnic_front.jpg" << endl;
         cout << "You: ";
 
@@ -863,39 +871,26 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         getline(cin, path);
         path = trim(path);
 
-        // Basic validation
         if (path.empty()) {
             cout << Config::CHATBOT_NAME << ": " << "Path cannot be empty. Please enter a valid file path." << endl;
             continue;
         }
 
-        // Check if it looks like a file path (has extension)
-        if (path.length() < 5) {
-            cout << Config::CHATBOT_NAME << ": " << "Path seems too short. Please enter a complete file path." << endl;
-            continue;
-        }
-
-        // Check for common image extensions
-        string lowerPath = toLower(path);
-        if (lowerPath.find(".jpg") == string::npos &&
-            lowerPath.find(".jpeg") == string::npos &&
-            lowerPath.find(".png") == string::npos &&
-            lowerPath.find(".pdf") == string::npos) {
-            cout << Config::CHATBOT_NAME << ": " << "Warning: Path doesn't have common image extension (.jpg, .jpeg, .png, .pdf)." << endl;
-        }
-
-        // Confirm with user
-        cout << Config::CHATBOT_NAME << ": " << "You entered: " << path << endl;
-        cout << "Is this correct? (yes/no): ";
-        string confirmation;
-        getline(cin, confirmation);
-        confirmation = toLower(trim(confirmation));
-
-        if (confirmation == "yes" || confirmation == "y") {
-            return path;
+        // Basic validation - check if file exists
+        ifstream testFile(path);
+        if (!testFile.is_open()) {
+            cout << Config::CHATBOT_NAME << ": " << "Warning: Cannot find file at this path." << endl;
+            cout << "Do you want to continue anyway? (yes/no): ";
+            string confirm;
+            getline(cin, confirm);
+            if (toLower(trim(confirm)) != "yes" && toLower(trim(confirm)) != "y") {
+                continue;
+            }
         }
         else {
-            cout << Config::CHATBOT_NAME << ": " << "Let's try again." << endl;
+            testFile.close();
         }
+
+        return path;
     }
 }

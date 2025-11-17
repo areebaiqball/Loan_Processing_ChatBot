@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="application.cpp" />
     <ClCompile Include="application_collector.cpp" />
+    <ClCompile Include="file_manager.cpp" />
     <ClCompile Include="home.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="utterances.cpp" />
@@ -28,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="application.h" />
     <ClInclude Include="application_collector.h" />
+    <ClInclude Include="file_manager.h" />
     <ClInclude Include="home.h" />
     <ClInclude Include="utilities.h" />
   </ItemGroup>

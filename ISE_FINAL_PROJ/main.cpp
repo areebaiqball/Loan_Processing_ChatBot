@@ -5,6 +5,7 @@
 #include "utilities.h"
 #include "application.h"
 #include "application_collector.h"
+#include"file_manager.h"
 using namespace std;
 
 /// <summary>
@@ -18,6 +19,8 @@ namespace Config {
     const int MAX_LOANS = 100;
     const char DELIMITER = '#';
     const string EXIT_COMMAND = "x";
+    const string APPLICATIONS_FILE = "applications.txt";
+    const string IMAGES_DIRECTORY = "images/";
 }
 
 /// <summary>
@@ -159,7 +162,7 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount,
                                     cout << Config::CHATBOT_NAME << ": Please enter a valid positive option number:" << endl;
                                 }
                             }
-                            catch (const exception& e) {
+                            catch (const exception& ) {
                                 cout << Config::CHATBOT_NAME << ": Please enter a valid option number:" << endl;
                             }
                         }
@@ -193,19 +196,23 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount,
 /// </summary>
 /// <param name="collector">Application collector instance</param>
 /// <param name="running">Reference to running flag</param>
-void handleLoanApplication(ApplicationCollector& collector, bool& running) {
+void handleLoanApplication(ApplicationCollector& collector, FileManager& fileManager, bool& running) {
     cout << Config::CHATBOT_NAME << ": " << "Starting loan application process..." << endl;
     cout << "I'll guide you through the application step by step." << endl;
     cout << "You can type 'cancel' at any time to exit." << endl << endl;
 
     try {
         LoanApplication application = collector.collectCompleteApplication();
-        cout << Config::CHATBOT_NAME << ": " << " Application collected successfully!" << endl;
-        cout << "Your application is ready for submission." << endl;
-        cout << "Application ID: " << application.getApplicationId() << endl; // Will be set in LPC-14
 
-        // TODO: Save application in LPC-14
-        // saveLoanApplication(application, Config::APPLICATIONS_FILE);
+      
+        if (fileManager.saveApplication(application)) {
+            cout << Config::CHATBOT_NAME << ": " << "Application submitted successfully!" << endl;
+            cout << "Your Application ID: " << application.getApplicationId() << endl;
+            cout << "All document images have been copied to the 'images' folder." << endl;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": " << "Failed to save application. Please try again." << endl;
+        }
 
     }
     catch (const exception& e) {
@@ -217,10 +224,10 @@ void handleLoanApplication(ApplicationCollector& collector, bool& running) {
 /// <summary>
 /// Handles loan type selection workflow
 /// </summary>
-void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
-    const Utterance utterances[], int utteranceCount,
-    bool& running, bool& inLoanSelection,
-    const string& userInput, ApplicationCollector& collector) {  // ADD collector parameter
+void handleLoanTypeSelection(const HomeLoan loans[], int loanCount, const Utterance utterances[], int utteranceCount, bool& running, bool& inLoanSelection,
+   
+    const string& userInput, ApplicationCollector& collector, FileManager& fileManager) {
+
     string lowerInput = toLower(trim(userInput));
 
     if (lowerInput == "h") {
@@ -241,9 +248,21 @@ void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
 
         if (confirmation == "yes" || confirmation == "y") {
             // Start application for the selected loan type
-            LoanApplication application = collector.collectApplicationForLoan(loanType, loanDetails);
-            // TODO: Save application in LPC-14
-            cout << Config::CHATBOT_NAME << ": " << "✅ " << loanType << " loan application completed!" << endl;
+            try {
+                LoanApplication application = collector.collectApplicationForLoan(loanType, loanDetails, fileManager);
+
+                // Save the application
+                if (fileManager.saveApplication(application)) {
+                    cout << Config::CHATBOT_NAME << ": " << "Application for " << loanType << " loan completed!" << endl;
+                    cout << "Your Application ID: " << application.getApplicationId() << endl;
+                }
+                else {
+                    cout << Config::CHATBOT_NAME << ": " << "Failed to save application. Please try again." << endl;
+                }
+            }
+            catch (const exception& e) {
+                cout << Config::CHATBOT_NAME << ": " << "Application failed: " << e.what() << endl;
+            }
         }
         else {
             cout << Config::CHATBOT_NAME << ": " << "Application cancelled. Returning to loan selection." << endl;
@@ -259,7 +278,6 @@ void handleLoanTypeSelection(const HomeLoan loans[], int loanCount,
         // Keep inLoanSelection as true
     }
 }
-
 /// <summary>
 /// main entry point to the program
 /// </summary>
@@ -268,6 +286,7 @@ int main() {
     // Initialize data structures
     Utterance utterances[Config::MAX_UTTERANCES];
     HomeLoan homeLoans[Config::MAX_LOANS];
+    FileManager fileManager;
 
     // Load data from files
     int utteranceCount = loadUtterances(utterances, Config::MAX_UTTERANCES,
@@ -314,8 +333,7 @@ int main() {
 
        
         if (inLoanSelection) {
-            handleLoanTypeSelection(homeLoans, loanCount, utterances,
-                utteranceCount, running, inLoanSelection, userInput,collector);
+            handleLoanTypeSelection(homeLoans, loanCount, utterances, utteranceCount, running, inLoanSelection, userInput, collector, fileManager);
             continue;
         }
 

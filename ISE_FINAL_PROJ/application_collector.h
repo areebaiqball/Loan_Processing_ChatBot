@@ -3,6 +3,7 @@
 
 #include "application.h"
 #include "utilities.h"
+#include "file_manager.h"
 #include <iostream>
 #include <vector>
 #include <string>
@@ -86,7 +87,7 @@ public:
     /// <summary>
     /// Collects application for a specific loan type
     /// </summary>
-    LoanApplication collectApplicationForLoan(const string& loanType, const string& loanDetails);
+    LoanApplication collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager);
     /// <summary>
 /// Collects loan-specific information based on loan type
 /// </summary>
