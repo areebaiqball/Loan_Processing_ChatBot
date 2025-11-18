@@ -822,6 +822,9 @@ void ApplicationCollector::collectLoanSpecificInfo(LoanApplication& application,
 
     cout << Config::CHATBOT_NAME << ": " << loanType << " specific information collected!" << endl;
 }
+/// <summary>
+/// Collects image paths for document uploads
+/// </summary>
 bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
     cout << endl << "=== DOCUMENT UPLOAD ===" << endl;
 
@@ -861,6 +864,9 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
     }
 }
 
+/// <summary>
+/// Gets validated image path from user
+/// </summary>
 string ApplicationCollector::getImagePath(const string& imageType) {
     while (true) {
         cout << Config::CHATBOT_NAME << ": " << "Enter the full file path for " << imageType << ":" << endl;
