@@ -186,35 +186,59 @@ int loadScooterLoans(ScooterLoan loans[], int maxSize, const string& filename) {
 }
 
 /// <summary>
-/// Displays scooter loan options
+/// Displays scooter loan options in tabular format
 /// </summary>
-bool displayScooterLoanOptions(const ScooterLoan loans[], int size) {
-    if (size == 0) {
-        cout << "Sorry, no scooter loan options available at the moment." << endl;
-        return false;
-    }
+bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const string& makeNumber) {
+    string makeName = "Make " + makeNumber;
+    bool found = false;
 
-    cout << endl << "  Available Scooter Loan Options" << endl;
-    cout << "========================================" << endl;
+    cout << endl << "  Scooter Loan Options for " << makeName << endl;
+    cout << "+-----+-----------+------------------+---------------+-------------+---------------+---------------------+" << endl;
+    cout << "| Opt |   Model   | Range per Charge | Charging Time | Max Speed   | Total Price   | Down Payment        |" << endl;
+    cout << "+-----+-----------+------------------+---------------+-------------+---------------+---------------------+" << endl;
 
+    int optionCount = 0;
     for (int i = 0; i < size; i++) {
-        long long monthlyInstallment = loans[i].calculateMonthlyInstallment();
-        cout << "Option " << (i + 1) << ":" << endl;
-        cout << "  Make: " << loans[i].getMake() << endl;
-        cout << "  Model: " << loans[i].getModel() << endl;
-        cout << "  Range: " << loans[i].getDistancePerCharge() << " KM per charge" << endl;
-        cout << "  Charging Time: " << loans[i].getChargingTime() << " hours" << endl;
-        cout << "  Max Speed: " << loans[i].getMaxSpeed() << " KM/H" << endl;
-        cout << "  Installments: " << loans[i].getInstallments() << " months" << endl;
-        cout << "  Total Price: PKR " << loans[i].getPrice() << endl;
-        cout << "  Down Payment: PKR " << loans[i].getDownPayment() << endl;
-        cout << "  Monthly Installment: PKR " << monthlyInstallment << endl;
-        cout << "----------------------------------------" << endl;
+        if (loans[i].getMake() == makeName) {
+            found = true;
+            optionCount++;
+            cout << "| " << setw(3) << optionCount << " | "
+                << setw(9) << loans[i].getModel() << " | "
+                << setw(16) << loans[i].getDistancePerCharge() << " KM | "
+                << setw(13) << loans[i].getChargingTime() << " Hrs | "
+                << setw(11) << loans[i].getMaxSpeed() << " KM/H | "
+                << "PKR " << setw(8) << loans[i].getPrice() << " | "
+                << "PKR " << setw(15) << loans[i].getDownPayment() << " |" << endl;
+        }
     }
 
-    return true;
-}
+    cout << "+-----+-----------+------------------+---------------+-------------+---------------+---------------------+" << endl;
 
+    // Display monthly installments in a separate table
+    if (found) {
+        cout << endl << "Monthly Installments:" << endl;
+        cout << "+-----+---------------------+" << endl;
+        cout << "| Opt | Monthly Installment |" << endl;
+        cout << "+-----+---------------------+" << endl;
+
+        optionCount = 0;
+        for (int i = 0; i < size; i++) {
+            if (loans[i].getMake() == makeName) {
+                optionCount++;
+                long long monthlyInstallment = loans[i].calculateMonthlyInstallment();
+                cout << "| " << setw(3) << optionCount << " | "
+                    << "PKR " << setw(15) << monthlyInstallment << " |" << endl;
+            }
+        }
+        cout << "+-----+---------------------+" << endl;
+    }
+
+    if (!found) {
+        cout << "No scooter options available for this make." << endl;
+    }
+
+    return found;
+}
 /// <summary>
 /// Displays installment plan for specific scooter option
 /// </summary>

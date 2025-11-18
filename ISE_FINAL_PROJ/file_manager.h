@@ -59,6 +59,20 @@ public:
         int& submitted,
         int& approved,
         int& rejected) const;
-};
 
+    /// <summary>
+   /// Updates application status in the file
+   /// </summary>
+    bool updateApplicationStatus(const string& applicationId, const string& newStatus);
+  
+    /// <summary>
+    /// Finds application by ID
+    /// </summary>
+    LoanApplication findApplicationById(const string& applicationId) const;
+
+    /// <summary>
+    /// Gets all applications with detailed information
+    /// </summary>
+    vector<LoanApplication> loadAllApplicationsDetailed() const;
+};
 #endif

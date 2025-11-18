@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <iomanip>
 
+using namespace std;
+
 // HomeLoan class implementation
 HomeLoan::HomeLoan() {
     area = "";
@@ -55,13 +57,15 @@ void HomeLoan::setDownPayment(long long dp) {
     downPayment = dp;
 }
 
+long long HomeLoan::calculateMonthlyInstallment() const {
+    if (installments <= 0) return 0;
+    long long remainingAmount = (price - downPayment);
+    return remainingAmount / installments;
+}
+
 /// <summary>
 /// Loads home loan data from file
 /// </summary>
-/// <param name="loans">loans Array to store loans</param>
-/// <param name="maxSize">Maximum array size</param>
-/// <param name="filename">File to load from</param>
-/// <returns>Number of loans loaded</returns>
 int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -114,40 +118,34 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
-long long HomeLoan::calculateMonthlyInstallment() const {
-    if (installments <= 0) return 0.0; 
-    long long remainingAmount = (price - downPayment);
-    return remainingAmount / installments;
-}
 /// <summary>
 /// Displays home loan options for area
 /// </summary>
-/// <param name="loans">Array of loans</param>
-/// <param name="size">Array size</param>
-/// <param name="areaNumber">Area identifier</param>
-/// <returns>True if data found, false otherwise</returns>
 bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber) {
     string areaName = "Area " + areaNumber;
     bool found = false;
     int optionCount = 0;
 
-    cout << endl << "  Home Loan Options for " << areaName << endl << endl;
+    cout << endl << "  Home Loan Options for " << areaName << endl;
+    cout << "+-----+----------+--------------+-------------+---------------+-------------------------+" << endl;
+    cout << "| Opt |   Size   | Installments | Total Price | Down Payment  | Monthly Installment     |" << endl;
+    cout << "+-----+----------+--------------+-------------+---------------+-------------------------+" << endl;
 
     for (int i = 0; i < size; i++) {
         if (loans[i].getArea() == areaName) {
             found = true;
             optionCount++;
-            long long monthlyInstallment = static_cast<long long>(loans[i].calculateMonthlyInstallment());
-            cout << "Option " << optionCount << ":" << endl;
-            cout << "  Size: " << loans[i].getSize() << endl;
-            cout << "  Installments: " << loans[i].getInstallments() << " months" << endl;
-            cout << "  Total Price: PKR " << loans[i].getPrice() << endl;
-            cout << "  Down Payment: PKR " << loans[i].getDownPayment() << endl;
-            cout << "  Monthly Installment: PKR " << monthlyInstallment << endl;
-               
-            cout << "----------------------------------------" << endl;
+            long long monthlyInstallment = loans[i].calculateMonthlyInstallment();
+            cout << "| " << setw(3) << optionCount << " | "  
+                << setw(8) << loans[i].getSize() << " | "
+                << setw(12) << loans[i].getInstallments() << " | "
+                << "PKR " << setw(8) << loans[i].getPrice() << " | "
+                << "PKR " << setw(10) << loans[i].getDownPayment() << " | "
+                << "PKR " << setw(17) << monthlyInstallment << " |" << endl;
         }
     }
+
+    cout << "+-----+----------+--------------+-------------+---------------+-------------------------+" << endl;
 
     if (!found) {
         cout << "Sorry, no loan options available for this area at the moment." << endl;
@@ -160,7 +158,7 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
 /// Displays detailed installment plan for the loan
 /// </summary>
 void HomeLoan::displayInstallmentPlan() const {
-    long long monthlyInstallment = static_cast<long long>(calculateMonthlyInstallment());
+    long long monthlyInstallment = calculateMonthlyInstallment();
     long long remainingBalance = getPrice() - getDownPayment();
 
     cout << endl << "  INSTALLMENT PLAN DETAILS" << endl;
@@ -182,11 +180,9 @@ void HomeLoan::displayInstallmentPlan() const {
 
     long long currentBalance = remainingBalance;
 
-    // Display ALL months without skipping any
     for (int month = 1; month <= getInstallments(); month++) {
-        long long paymentDue =monthlyInstallment;
+        long long paymentDue = monthlyInstallment;
 
-        // For the last month, adjust payment to clear remaining balance
         if (month == getInstallments()) {
             paymentDue = currentBalance;
         }
@@ -200,7 +196,6 @@ void HomeLoan::displayInstallmentPlan() const {
 
     cout << "+-------+----------------+---------------+" << endl << endl;
 
-    // Display summary with proper formatting
     long long totalPayment = getDownPayment() + (monthlyInstallment * getInstallments());
     long long totalInstallments = monthlyInstallment * getInstallments();
 
@@ -209,14 +204,10 @@ void HomeLoan::displayInstallmentPlan() const {
     cout << "  Down Payment: PKR " << getDownPayment() << endl;
     cout << "  Total Installments: PKR " << totalInstallments << endl;
 }
+
 /// <summary>
 /// Displays installment plan for specific loan option
 /// </summary>
-/// <param name="loans">Array of loans</param>
-/// <param name="size">Array size</param>
-/// <param name="areaNumber">Area identifier</param>
-/// <param name="optionNumber">Selected option number</param>
-/// <returns>True if option found, false otherwise</returns>
 bool displayInstallmentPlanForOption(const HomeLoan loans[], int size,
     const string& areaNumber, int optionNumber) {
     string areaName = "Area " + areaNumber;

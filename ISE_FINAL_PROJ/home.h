@@ -54,9 +54,7 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename);
 /// <param name="size">Array size</param>
 /// <param name="areaNumber">Area identifier</param>
 /// <returns>True if data found, false otherwise</returns>
-bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber);
-
-/// <summary>
+bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber);/// <summary>
 /// Displays installment plan for selected loan option
 /// </summary>
 /// <param name="loans">Array of loans</param>

@@ -1,4 +1,4 @@
-#include "file_manager.h"
+﻿#include "file_manager.h"
 #include "utilities.h"
 #include <fstream>
 #include <iostream>
@@ -51,37 +51,97 @@ bool FileManager::fileExists(const string& filename) const {
 }
 
 bool FileManager::copyImageFile(const string& sourcePath, const string& destinationPath) const {
-    // Basic check if source file exists
+    cout << endl << "=== DEBUG COPY PROCESS ===" << endl;
+    cout << "Source: " << sourcePath << endl;
+    cout << "Destination: " << destinationPath << endl;
+
+    // Verify source file exists and is readable
+    ifstream sourceCheck(sourcePath, ios::binary | ios::ate);
+    if (!sourceCheck.is_open()) {
+        cerr << " ERROR: Cannot open source file for reading" << endl;
+        return false;
+    }
+
+    streamsize sourceSize = sourceCheck.tellg();
+    sourceCheck.close();
+    cout << "Source file size: " << sourceSize << " bytes" << endl;
+
+    if (sourceSize == 0) {
+        cerr << " ERROR: Source file is empty" << endl;
+        return false;
+    }
+
+    // Open source file
     ifstream source(sourcePath, ios::binary);
     if (!source.is_open()) {
-        cerr << "Error: Source file not found: " << sourcePath << endl;
+        cerr << "❌ ERROR: Failed to open source file for copying" << endl;
         return false;
     }
 
     // Open destination file
     ofstream destination(destinationPath, ios::binary);
     if (!destination.is_open()) {
-        cerr << "Error: Cannot create destination file: " << destinationPath << endl;
+        cerr << "❌ ERROR: Failed to create destination file" << endl;
         source.close();
         return false;
     }
 
-    // Copy file content
-    destination << source.rdbuf();
+    // Copy with buffer and progress tracking
+    const size_t bufferSize = 8192;
+    char buffer[bufferSize];
+    streamsize totalCopied = 0;
+    bool success = true;
 
-    // Check if copy was successful
-    bool success = !source.fail() && !destination.fail();
+    while (source.read(buffer, bufferSize) || source.gcount() > 0) {
+        streamsize bytesRead = source.gcount();
+        if (!destination.write(buffer, bytesRead)) {
+            cerr << "❌ ERROR: Failed to write to destination" << endl;
+            success = false;
+            break;
+        }
+        totalCopied += bytesRead;
+        cout << "Copied: " << totalCopied << "/" << sourceSize << " bytes" << endl;
+    }
+
+    // Check for errors
+    if (source.bad()) {
+        cerr << "❌ ERROR: Source stream error" << endl;
+        success = false;
+    }
+    if (destination.bad()) {
+        cerr << "❌ ERROR: Destination stream error" << endl;
+        success = false;
+    }
 
     source.close();
     destination.close();
 
-    if (!success) {
-        cerr << "Error: File copy failed from " << sourcePath << " to " << destinationPath << endl;
+    if (success) {
+        // Verify the copy
+        ifstream destCheck(destinationPath, ios::binary | ios::ate);
+        if (destCheck.is_open()) {
+            streamsize destSize = destCheck.tellg();
+            destCheck.close();
+            cout << "Destination file size: " << destSize << " bytes" << endl;
+
+            if (destSize == sourceSize) {
+                cout << "✅ SUCCESS: Copy verified, sizes match!" << endl;
+            }
+            else {
+                cerr << "❌ ERROR: Size mismatch! Source: " << sourceSize
+                    << " Dest: " << destSize << endl;
+                success = false;
+            }
+        }
+        else {
+            cerr << "❌ ERROR: Cannot verify destination file" << endl;
+            success = false;
+        }
     }
 
+    cout << "=== END COPY PROCESS ===" << endl << endl;
     return success;
 }
-
 bool FileManager::saveApplication(LoanApplication& application) {
     ofstream file(applicationsFile, ios::app);
 
@@ -97,65 +157,69 @@ bool FileManager::saveApplication(LoanApplication& application) {
             application.setApplicationId(appId);
         }
 
+        string appId = application.getApplicationId();
+
+        // Check for circular copy protection
+        vector<string> sourcePaths = {
+            application.getCnicFrontImagePath(),
+            application.getCnicBackImagePath(),
+            application.getElectricityBillImagePath(),
+            application.getSalarySlipImagePath()
+        };
+
+        for (const auto& sourcePath : sourcePaths) {
+            if (sourcePath.find("images/") != string::npos ||
+                sourcePath.find("images\\") != string::npos ||
+                sourcePath.find("COPY_FAILED") != string::npos) {
+                cerr << "Error: Cannot use files from images folder as source" << endl;
+                file.close();
+                return false;
+            }
+        }
+
         // Set default status and date if not set
         if (application.getStatus().empty()) {
             application.setStatus("submitted");
         }
 
         if (application.getSubmissionDate().empty()) {
-            application.setSubmissionDate("01-01-2024"); // Default date
+            application.setSubmissionDate("01-01-2024");
         }
 
-        // Copy images and get new paths
-        string appId = application.getApplicationId();
-
-        cout << endl << "Copying document images..." << endl;
-
-        // Copy CNIC Front
+        // Copy images
         string sourceCnicFront = application.getCnicFrontImagePath();
         string newCnicFrontPath = imagesDirectory + appId + "_cnic_front.jpg";
         if (copyImageFile(sourceCnicFront, newCnicFrontPath)) {
             application.setCnicFrontImagePath(newCnicFrontPath);
-            cout << "CNIC front image copied to: " << newCnicFrontPath << endl;
         }
         else {
-            cerr << "Failed to copy CNIC front image" << endl;
             application.setCnicFrontImagePath("COPY_FAILED: " + sourceCnicFront);
         }
 
-        // Copy CNIC Back
         string sourceCnicBack = application.getCnicBackImagePath();
         string newCnicBackPath = imagesDirectory + appId + "_cnic_back.jpg";
         if (copyImageFile(sourceCnicBack, newCnicBackPath)) {
             application.setCnicBackImagePath(newCnicBackPath);
-            cout << "CNIC back image copied to: " << newCnicBackPath << endl;
         }
         else {
-            cerr << "Failed to copy CNIC back image" << endl;
             application.setCnicBackImagePath("COPY_FAILED: " + sourceCnicBack);
         }
 
-        // Copy Electricity Bill
         string sourceElectricityBill = application.getElectricityBillImagePath();
         string newElectricityBillPath = imagesDirectory + appId + "_electricity_bill.jpg";
         if (copyImageFile(sourceElectricityBill, newElectricityBillPath)) {
             application.setElectricityBillImagePath(newElectricityBillPath);
-            cout << "Electricity bill image copied to: " << newElectricityBillPath << endl;
         }
         else {
-            cerr << "Failed to copy electricity bill image" << endl;
             application.setElectricityBillImagePath("COPY_FAILED: " + sourceElectricityBill);
         }
 
-        // Copy Salary Slip
         string sourceSalarySlip = application.getSalarySlipImagePath();
         string newSalarySlipPath = imagesDirectory + appId + "_salary_slip.jpg";
         if (copyImageFile(sourceSalarySlip, newSalarySlipPath)) {
             application.setSalarySlipImagePath(newSalarySlipPath);
-            cout << "Salary slip image copied to: " << newSalarySlipPath << endl;
         }
         else {
-            cerr << "Failed to copy salary slip image" << endl;
             application.setSalarySlipImagePath("COPY_FAILED: " + sourceSalarySlip);
         }
 
@@ -206,7 +270,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << ref2.phoneNumber << Config::DELIMITER
             << ref2.email << Config::DELIMITER;
 
-        // Image paths (the new copied paths)
+        // Image paths
         file << application.getCnicFrontImagePath() << Config::DELIMITER
             << application.getCnicBackImagePath() << Config::DELIMITER
             << application.getElectricityBillImagePath() << Config::DELIMITER
@@ -223,8 +287,6 @@ bool FileManager::saveApplication(LoanApplication& application) {
         return false;
     }
 }
-
-// Rest of the methods remain the same...
 vector<LoanApplication> FileManager::loadAllApplications() const {
     vector<LoanApplication> applications;
 
@@ -295,4 +357,156 @@ void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, 
         else if (status == "approved") approved++;
         else if (status == "rejected") rejected++;
     }
+}
+
+bool FileManager::updateApplicationStatus(const string& applicationId, const string& newStatus) {
+    // Read all applications
+    vector<string> lines;
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        cerr << "Error: Could not open " << applicationsFile << " for reading" << endl;
+        return false;
+    }
+
+    string line;
+    bool found = false;
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        vector<string> parts = splitString(line, Config::DELIMITER);
+        if (!parts.empty() && parts[0] == applicationId) {
+            // Update the status (second field)
+            parts[1] = newStatus;
+
+            // Reconstruct the line
+            string updatedLine;
+            for (size_t i = 0; i < parts.size(); i++) {
+                if (i > 0) updatedLine += Config::DELIMITER;
+                updatedLine += parts[i];
+            }
+            lines.push_back(updatedLine);
+            found = true;
+        }
+        else {
+            lines.push_back(line);
+        }
+    }
+    file.close();
+
+    if (!found) {
+        cerr << "Error: Application ID " << applicationId << " not found" << endl;
+        return false;
+    }
+
+    // Write all lines back to file
+    ofstream outFile(applicationsFile);
+    if (!outFile.is_open()) {
+        cerr << "Error: Could not open " << applicationsFile << " for writing" << endl;
+        return false;
+    }
+
+    for (const auto& l : lines) {
+        outFile << l << endl;
+    }
+    outFile.close();
+
+    cout << "Application " << applicationId << " status updated to: " << newStatus << endl;
+    return true;
+}
+
+LoanApplication FileManager::findApplicationById(const string& applicationId) const {
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        return LoanApplication();
+    }
+
+    string line;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        vector<string> parts = splitString(line, Config::DELIMITER);
+        if (!parts.empty() && parts[0] == applicationId) {
+            LoanApplication app;
+            try {
+                // Basic application data
+                app.setApplicationId(parts[0]);
+                app.setStatus(parts[1]);
+                app.setSubmissionDate(parts[2]);
+                app.setFullName(parts[3]);
+                app.setFathersName(parts[4]);
+                app.setPostalAddress(parts[5]);
+                app.setContactNumber(parts[6]);
+                app.setEmailAddress(parts[7]);
+                app.setCnicNumber(parts[8]);
+                app.setCnicExpiryDate(parts[9]);
+                app.setEmploymentStatus(parts[10]);
+                app.setMaritalStatus(parts[11]);
+                app.setGender(parts[12]);
+                app.setNumberOfDependents(stoi(parts[13]));
+                app.setAnnualIncome(stoll(parts[14]));
+                app.setAvgElectricityBill(stoll(parts[15]));
+                app.setCurrentElectricityBill(stoll(parts[16]));
+
+                // Note: For full implementation, you'd need to parse existing loans and references too
+
+            }
+            catch (const exception& e) {
+                cerr << "Error parsing application " << applicationId << ": " << e.what() << endl;
+            }
+            file.close();
+            return app;
+        }
+    }
+
+    file.close();
+    return LoanApplication();
+}
+
+vector<LoanApplication> FileManager::loadAllApplicationsDetailed() const {
+    vector<LoanApplication> applications;
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        return applications;
+    }
+
+    string line;
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        vector<string> parts = splitString(line, Config::DELIMITER);
+        if (parts.size() >= 17) { // At least basic fields
+            LoanApplication app;
+            try {
+                app.setApplicationId(parts[0]);
+                app.setStatus(parts[1]);
+                app.setSubmissionDate(parts[2]);
+                app.setFullName(parts[3]);
+                app.setFathersName(parts[4]);
+                app.setPostalAddress(parts[5]);
+                app.setContactNumber(parts[6]);
+                app.setEmailAddress(parts[7]);
+                app.setCnicNumber(parts[8]);
+                app.setCnicExpiryDate(parts[9]);
+                app.setEmploymentStatus(parts[10]);
+                app.setMaritalStatus(parts[11]);
+                app.setGender(parts[12]);
+                app.setNumberOfDependents(stoi(parts[13]));
+                app.setAnnualIncome(stoll(parts[14]));
+                app.setAvgElectricityBill(stoll(parts[15]));
+                app.setCurrentElectricityBill(stoll(parts[16]));
+
+                applications.push_back(app);
+            }
+            catch (const exception& e) {
+                cerr << "Error parsing application: " << e.what() << endl;
+            }
+        }
+    }
+
+    file.close();
+    return applications;
 }

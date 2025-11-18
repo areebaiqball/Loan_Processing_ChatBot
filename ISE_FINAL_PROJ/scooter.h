@@ -57,8 +57,7 @@ int loadScooterLoans(ScooterLoan loans[], int maxSize, const string& filename);
 /// <summary>
 /// Displays scooter loan options
 /// </summary>
-bool displayScooterLoanOptions(const ScooterLoan loans[], int size);
-
+bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const string& makeNumber);
 /// <summary>
 /// Displays installment plan for specific scooter option
 /// </summary>

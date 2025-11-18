@@ -188,31 +188,27 @@ int loadCarLoans(CarLoan loans[], int maxSize, const string& filename) {
 /// <summary>
 /// Displays car loan options
 /// </summary>
-bool displayCarLoanOptions(const CarLoan loans[], int size) {
-    if (size == 0) {
-        cout << "Sorry, no car loan options available at the moment." << endl;
-        return false;
-    }
+void displayCarLoanOptionsTable(const CarLoan loans[], int size, const string& makeNumber) {
+    string makeName = "Make " + makeNumber;
 
-    cout << endl << "  Available Car Loan Options" << endl;
-    cout << "========================================" << endl;
+    cout << endl << "  Car Loan Options for " << makeName << endl;
+    cout << "+-----+-----------+---------+----------+-------------+---------------+" << endl;
+    cout << "| Opt |   Model   | Engine  | Condition| Total Price | Down Payment  |" << endl;
+    cout << "+-----+-----------+---------+----------+-------------+---------------+" << endl;
 
+    int optionCount = 0;
     for (int i = 0; i < size; i++) {
-        long long monthlyInstallment = loans[i].calculateMonthlyInstallment();
-        cout << "Option " << (i + 1) << ":" << endl;
-        cout << "  Make: " << loans[i].getMake() << endl;
-        cout << "  Model: " << loans[i].getModel() << endl;
-        cout << "  Engine: " << loans[i].getEngine() << "cc" << endl;
-        cout << "  Condition: " << loans[i].getUsed() << endl;
-        cout << "  Year: " << loans[i].getManufacturingYear() << endl;
-        cout << "  Installments: " << loans[i].getInstallments() << " months" << endl;
-        cout << "  Total Price: PKR " << loans[i].getPrice() << endl;
-        cout << "  Down Payment: PKR " << loans[i].getDownPayment() << endl;
-        cout << "  Monthly Installment: PKR " << monthlyInstallment << endl;
-        cout << "----------------------------------------" << endl;
+        if (loans[i].getMake() == makeName) {
+            optionCount++;
+            cout << "| " << setw(3) << optionCount << " | "
+                << setw(9) << loans[i].getModel() << " | "
+                << setw(7) << loans[i].getEngine() << " | "
+                << setw(8) << loans[i].getUsed() << " | "
+                << "PKR " << setw(8) << loans[i].getPrice() << " | "
+                << "PKR " << setw(10) << loans[i].getDownPayment() << " |" << endl;
+        }
     }
-
-    return true;
+    cout << "+-----+-----------+---------+----------+-------------+---------------+" << endl;
 }
 
 /// <summary>

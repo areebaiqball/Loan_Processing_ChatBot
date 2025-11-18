@@ -67,10 +67,10 @@ struct ValidationResult {
 /// Represents an existing loan for an applicant
 /// </summary>
 struct ExistingLoan {
-    bool isActive;
-    long long totalAmount;
-    long long amountReturned;
-    long long amountDue;
+    bool isActive = false;
+    long long totalAmount = 0;
+    long long amountReturned = 0;
+    long long amountDue = 0;
     string bankName;
     string loanCategory;
 
@@ -86,7 +86,6 @@ struct ExistingLoan {
         return true;
     }
 };
-
 /// <summary>
 /// Represents a reference person for the applicant
 /// </summary>
@@ -231,7 +230,7 @@ public:
     void clearExistingLoans();
     int getExistingLoansCount() const;
 
-
+    //Validation
     ValidationResult validateCompleteApplication() const;
     ValidationResult validateForLoanType(const string& loanType, long long loanAmount) const;
     bool validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const;

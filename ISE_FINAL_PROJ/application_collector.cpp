@@ -869,34 +869,52 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
 /// </summary>
 string ApplicationCollector::getImagePath(const string& imageType) {
     while (true) {
-        cout << Config::CHATBOT_NAME << ": " << "Enter the full file path for " << imageType << ":" << endl;
-        cout << "Example: C:/Users/YourName/Documents/cnic_front.jpg" << endl;
+        cout << Config::CHATBOT_NAME << ": " << "Enter the ORIGINAL file path for " << imageType << ":" << endl;
+        cout << " This must be from your computer, NOT from this program's 'images' folder" << endl;
+        cout << " Good: C:/Users/DELL/Pictures/your_photo.jpg" << endl;
+        cout << " Bad: images/1004_photo.jpg" << endl;
         cout << "You: ";
 
         string path;
         getline(cin, path);
         path = trim(path);
 
-        if (path.empty()) {
-            cout << Config::CHATBOT_NAME << ": " << "Path cannot be empty. Please enter a valid file path." << endl;
+        // Convert backslashes to forward slashes
+        for (char& c : path) {
+            if (c == '\\') c = '/';
+        }
+
+        // CRITICAL: Check if path is from our images folder
+        if (path.find("images/") == 0 ||  // Starts with images/
+            path.find("/images/") != string::npos ||  // Contains /images/
+            path.find("COPY_FAILED") != string::npos) {  // Previous failed copy
+
+            cout << " ERROR: You selected a file from the 'images' folder or a previously failed copy." << endl;
+            cout << "This will corrupt files. Please select ORIGINAL files from:" << endl;
+            cout << "- C:/Users/DELL/Pictures/" << endl;
+            cout << "- C:/Users/DELL/Downloads/" << endl;
+            cout << "- C:/Users/DELL/Desktop/" << endl;
+            cout << "- C:/Users/DELL/OneDrive/Pictures/" << endl;
+            cout << "NOT from the 'images' folder in this project." << endl;
             continue;
         }
 
-        // Basic validation - check if file exists
-        ifstream testFile(path);
+        // Check if file exists
+        ifstream testFile(path, ios::binary | ios::ate);
         if (!testFile.is_open()) {
-            cout << Config::CHATBOT_NAME << ": " << "Warning: Cannot find file at this path." << endl;
-            cout << "Do you want to continue anyway? (yes/no): ";
-            string confirm;
-            getline(cin, confirm);
-            if (toLower(trim(confirm)) != "yes" && toLower(trim(confirm)) != "y") {
-                continue;
-            }
-        }
-        else {
-            testFile.close();
+            cout << Config::CHATBOT_NAME << ": " << "❌ ERROR: Cannot find file: " << path << endl;
+            continue;
         }
 
+        streamsize fileSize = testFile.tellg();
+        testFile.close();
+
+        if (fileSize == 0) {
+            cout << Config::CHATBOT_NAME << ": " << " ERROR: File is empty" << endl;
+            continue;
+        }
+
+        cout << " Original file found: " << path << " (" << fileSize << " bytes)" << endl;
         return path;
     }
 }
