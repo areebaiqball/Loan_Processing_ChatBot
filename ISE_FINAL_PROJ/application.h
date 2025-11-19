@@ -125,6 +125,13 @@ private:
     string status;
     string submissionDate;
 
+    string loanType;       
+    string loanCategory;    
+    long long loanAmount;   
+    long long downPayment;
+    int installmentMonths;  
+    long long monthlyPayment;
+
     // Personal Information
     string fullName;
     string fathersName;
@@ -199,6 +206,12 @@ public:
     string getCnicBackImagePath() const;
     string getElectricityBillImagePath() const;
     string getSalarySlipImagePath() const;
+    string getLoanType() const;
+    string getLoanCategory() const;
+    long long getLoanAmount() const;
+    long long getDownPayment() const;
+    int getInstallmentMonths() const;
+    long long getMonthlyPayment() const;
 
     // Setters
     void setApplicationId(const string& id);
@@ -224,6 +237,12 @@ public:
     void setCnicBackImagePath(const string& path);
     void setElectricityBillImagePath(const string& path);
     void setSalarySlipImagePath(const string& path);
+    void setLoanType(const string& type);
+    void setLoanCategory(const string& category);
+    void setLoanAmount(long long amount);
+    void setDownPayment(long long payment);
+    void setInstallmentMonths(int months);
+    void setMonthlyPayment(long long payment);
 
     // Existing Loans Management
     void addExistingLoan(const ExistingLoan& loan);

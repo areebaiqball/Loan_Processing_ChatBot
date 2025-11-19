@@ -25,8 +25,10 @@ namespace Config {
     const string APPLICATIONS_FILE = "applications.txt";
     const string IMAGES_DIRECTORY = "images/";
 }
+void checkApplicationStatusByCNIC(FileManager& fileManager);
 void displayApplicationStatistics(FileManager& fileManager);
 void searchApplicationById(FileManager& fileManager);
+void viewAllApplications(FileManager& fileManager);
 bool isValidAreaInput(const string& input) {
     return (input == "1" || input == "2" || input == "3" || input == "4");
 }
@@ -86,12 +88,13 @@ void displayScooterMakes() {
 
 void displayLenderMenu() {
     cout << endl << "========== LENDER MENU ==========" << endl;
-    cout << "  1. View Pending Applications" << endl;
-    cout << "  2. View Approved Applications" << endl;
-    cout << "  3. View Rejected Applications" << endl;
-    cout << "  4. Review and Process Applications" << endl;
-    cout << "  5. Application Statistics" << endl;
-    cout << "  6. Search Application by ID" << endl;
+    cout << "  1. View ALL Applications" << endl;
+    cout << "  2. View Pending Applications" << endl;
+    cout << "  3. View Approved Applications" << endl;
+    cout << "  4. View Rejected Applications" << endl;
+    cout << "  5. Review and Process Applications" << endl;
+    cout << "  6. Application Statistics" << endl;
+    cout << "  7. Search Application by ID" << endl;
     cout << "  X. Exit to Main Menu" << endl;
     cout << "=================================" << endl;
 }
@@ -204,7 +207,110 @@ void reviewAndProcessApplications(FileManager& fileManager) {
         if (input == "a" || input == "approve") {
             newStatus = "approved";
             cout << "Application " << fullApp.getApplicationId() << " will be APPROVED." << endl;
+
+            // Display loan details from application
+            cout << endl << "========== LOAN DETAILS ==========" << endl;
+            cout << "Loan Type: " << fullApp.getLoanType() << endl;
+            cout << "Category: " << fullApp.getLoanCategory() << endl;
+            cout << "Total Amount: PKR " << fullApp.getLoanAmount() << endl;
+            cout << "Down Payment: PKR " << fullApp.getDownPayment() << endl;
+            cout << "Installment Period: " << fullApp.getInstallmentMonths() << " months" << endl;
+            cout << "Monthly Payment: PKR " << fullApp.getMonthlyPayment() << endl;
+            cout << "===================================" << endl;
+
+            // Ask for starting month with validation
+            int startMonth = 0;
+            while (startMonth < 1 || startMonth > 12) {
+                cout << endl << "Enter starting month (1=Jan, 2=Feb, ..., 12=Dec): ";
+                string monthInput;
+                getline(cin, monthInput);
+
+                try {
+                    startMonth = stoi(trim(monthInput));
+                    if (startMonth < 1 || startMonth > 12) {
+                        cout << "Month must be between 1 and 12." << endl;
+                    }
+                }
+                catch (...) {
+                    cout << "Invalid input. Please enter a number (1-12)." << endl;
+                    startMonth = 0;
+                }
+            }
+
+            // Ask for starting year with validation
+            int startYear = 0;
+            while (startYear < 2024 || startYear > 2100) {
+                cout << "Enter starting year (e.g., 2025): ";
+                string yearInput;
+                getline(cin, yearInput);
+
+                try {
+                    startYear = stoi(trim(yearInput));
+                    if (startYear < 2024 || startYear > 2100) {
+                        cout << "Year must be between 2024 and 2100." << endl;
+                    }
+                }
+                catch (...) {
+                    cout << "Invalid input. Please enter a valid year." << endl;
+                    startYear = 0;
+                }
+            }
+
+            // Get data from stored application
+            int totalMonths = fullApp.getInstallmentMonths();
+            long long monthlyPayment = fullApp.getMonthlyPayment();
+            long long loanAmount = fullApp.getLoanAmount() - fullApp.getDownPayment();
+
+            // Display complete installment plan
+            cout << endl << "======================================" << endl;
+            cout << "   MONTHLY INSTALLMENT PLAN" << endl;
+            cout << "======================================" << endl;
+            cout << "Applicant: " << fullApp.getFullName() << endl;
+            cout << "CNIC: " << fullApp.getCnicNumber() << endl;
+            cout << "Loan Type: " << fullApp.getLoanType() << endl;
+            cout << "Category: " << fullApp.getLoanCategory() << endl;
+            cout << "Loan Amount: PKR " << loanAmount << endl;
+            cout << "Down Payment: PKR " << fullApp.getDownPayment() << endl;
+            cout << "Total Months: " << totalMonths << endl;
+            cout << "Monthly Payment: PKR " << monthlyPayment << endl;
+            cout << "Starting: " << getMonthName(startMonth) << " " << startYear << endl;
+            cout << "======================================" << endl << endl;
+
+            int currentMonth = startMonth;
+            int currentYear = startYear;
+            long long remainingBalance = loanAmount;
+
+            cout << "+------+------------------+------+------------------+------------------+" << endl;
+            cout << "| No   | Month            | Year | Payment Due      | Remaining Bal    |" << endl;
+            cout << "+------+------------------+------+------------------+------------------+" << endl;
+
+            // Show ALL months (not just 12)
+            for (int i = 1; i <= totalMonths; i++) {
+                long long payment = monthlyPayment;
+
+                // Last payment adjusts for any remainder
+                if (i == totalMonths) {
+                    payment = remainingBalance;
+                }
+
+                remainingBalance -= payment;
+                if (remainingBalance < 0) remainingBalance = 0;
+
+                cout << "| " << setw(4) << i << " | "
+                    << setw(16) << left << getMonthName(currentMonth) << " | "
+                    << setw(4) << currentYear << " | PKR "
+                    << setw(12) << right << payment << " | PKR "
+                    << setw(12) << remainingBalance << " |" << endl;
+
+                getNextMonth(currentMonth, currentYear);
+            }
+
+            cout << "+------+------------------+------+------------------+------------------+" << endl;
+            cout << "======================================" << endl;
+            cout << "Total Amount Paid: PKR " << (fullApp.getDownPayment() + (monthlyPayment * totalMonths)) << endl;
+            cout << "======================================" << endl;
         }
+
         else if (input == "r" || input == "reject") {
             newStatus = "rejected";
             cout << "Application " << fullApp.getApplicationId() << " will be REJECTED." << endl;
@@ -261,21 +367,24 @@ void handleLenderMode(FileManager& fileManager) {
             inLenderMode = false;
         }
         else if (input == "1") {
-            viewApplicationsByStatus(fileManager, "submitted");
+            viewAllApplications(fileManager);
         }
         else if (input == "2") {
-            viewApplicationsByStatus(fileManager, "approved");
+            viewApplicationsByStatus(fileManager, "submitted");
         }
         else if (input == "3") {
-            viewApplicationsByStatus(fileManager, "rejected");
+            viewApplicationsByStatus(fileManager, "approved");
         }
         else if (input == "4") {
-            reviewAndProcessApplications(fileManager);
+            viewApplicationsByStatus(fileManager, "rejected");
         }
         else if (input == "5") {
-            displayApplicationStatistics(fileManager);
+            reviewAndProcessApplications(fileManager);
         }
         else if (input == "6") {
+            displayApplicationStatistics(fileManager);
+        }
+        else if (input == "7") {
             searchApplicationById(fileManager);
         }
         else {
@@ -325,6 +434,8 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
                     return;
                 }
 
+                int optionNumber = 0; // Declare here so it's in scope
+
                 if (planInput == "y" || planInput == "yes") {
                     cout << Config::CHATBOT_NAME << ": Enter option number to see installment plan: ";
                     getline(cin, userInput);
@@ -336,7 +447,7 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
                     }
 
                     try {
-                        int optionNumber = stoi(trim(userInput));
+                        optionNumber = stoi(trim(userInput));
                         displayInstallmentPlanForOption(loans, loanCount, areaInput, optionNumber);
                     }
                     catch (const exception&) {
@@ -356,8 +467,56 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
                 }
 
                 if (applyInput == "y" || applyInput == "yes") {
+                    // If optionNumber wasn't set (user didn't view plan), ask for it
+                    if (optionNumber == 0) {
+                        cout << Config::CHATBOT_NAME << ": Which option would you like to apply for? Enter option number: ";
+                        getline(cin, userInput);
+
+                        if (toLower(trim(userInput)) == Config::EXIT_COMMAND) {
+                            displayGoodbyeMessage();
+                            running = false;
+                            return;
+                        }
+
+                        try {
+                            optionNumber = stoi(trim(userInput));
+                        }
+                        catch (const exception&) {
+                            cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+                            continue;
+                        }
+                    }
+
                     try {
                         LoanApplication application = collector.collectApplicationForLoan("home", "Home Loan", fileManager);
+
+                        // Store the selected loan details
+                        application.setLoanType("Home Loan");
+                        application.setLoanCategory("Area " + areaInput + " - Option " + to_string(optionNumber));
+
+                        // Get the actual loan details from the loans array
+                        string areaName = "Area " + areaInput;
+                        int currentOption = 0;
+                        bool loanFound = false;
+
+                        for (int i = 0; i < loanCount; i++) {
+                            if (loans[i].getArea() == areaName) {
+                                currentOption++;
+                                if (currentOption == optionNumber) {
+                                    application.setLoanAmount(loans[i].getPrice());
+                                    application.setDownPayment(loans[i].getDownPayment());
+                                    application.setInstallmentMonths(loans[i].getInstallments());
+                                    application.setMonthlyPayment(loans[i].calculateMonthlyInstallment());
+                                    loanFound = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!loanFound) {
+                            cout << Config::CHATBOT_NAME << ": Error: Could not retrieve loan details." << endl;
+                            continue;
+                        }
 
                         cout << endl << Config::CHATBOT_NAME << ": Please review your application details:" << endl;
                         displayApplicationDetails(application);
@@ -370,8 +529,12 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
                             if (fileManager.saveApplication(application)) {
                                 cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
                                 cout << "Your Application ID: " << application.getApplicationId() << endl;
+                                cout << endl << "----------------------------------------" << endl;
+                                cout << "You can check your application status anytime by:" << endl;
+                                cout << "1. Saying 'check my applications'" << endl;
+                                cout << "2. Providing your CNIC: " << application.getCnicNumber() << endl;
+                                cout << "----------------------------------------" << endl;
 
-                                // Return after successful submission
                                 cout << endl << "Press any key to return to main menu...";
                                 getline(cin, userInput);
                                 return;
@@ -462,6 +625,8 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
         bool hasData = displayCarLoanOptionsByMake(loans, loanCount, makeInput);
 
         if (hasData) {
+            int optionNumber = 0; // Declare here
+
             cout << endl << Config::CHATBOT_NAME << ": Would you like to see the detailed installment plan? (Y/N): ";
             getline(cin, userInput);
             string planInput = toLower(trim(userInput));
@@ -483,7 +648,7 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
                 }
 
                 try {
-                    int optionNumber = stoi(trim(userInput));
+                    optionNumber = stoi(trim(userInput));
                     displayCarInstallmentPlan(loans, loanCount, optionNumber);
                 }
                 catch (const exception&) {
@@ -496,8 +661,50 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
             string applyInput = toLower(trim(userInput));
 
             if (applyInput == "y" || applyInput == "yes") {
+                // If optionNumber wasn't set, ask for it
+                if (optionNumber == 0) {
+                    cout << Config::CHATBOT_NAME << ": Which option would you like to apply for? Enter option number: ";
+                    getline(cin, userInput);
+
+                    try {
+                        optionNumber = stoi(trim(userInput));
+                    }
+                    catch (const exception&) {
+                        cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+                        return;
+                    }
+                }
+
                 try {
                     LoanApplication application = collector.collectApplicationForLoan("car", "Car Loan", fileManager);
+
+                    // Store the selected loan details
+                    application.setLoanType("Car Loan");
+                    application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
+
+                    // Get the actual loan details from the loans array
+                    string makeName = "Make " + makeInput;
+                    int currentOption = 0;
+                    bool loanFound = false;
+
+                    for (int i = 0; i < loanCount; i++) {
+                        if (loans[i].getMake() == makeName) {
+                            currentOption++;
+                            if (currentOption == optionNumber) {
+                                application.setLoanAmount(loans[i].getPrice());
+                                application.setDownPayment(loans[i].getDownPayment());
+                                application.setInstallmentMonths(loans[i].getInstallments());
+                                application.setMonthlyPayment(loans[i].calculateMonthlyInstallment());
+                                loanFound = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!loanFound) {
+                        cout << Config::CHATBOT_NAME << ": Error: Could not retrieve loan details." << endl;
+                        return;
+                    }
 
                     cout << endl << Config::CHATBOT_NAME << ": Please review your application:" << endl;
                     displayApplicationDetails(application);
@@ -509,8 +716,12 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
                         if (fileManager.saveApplication(application)) {
                             cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
                             cout << "Your Application ID: " << application.getApplicationId() << endl;
+                            cout << endl << "----------------------------------------" << endl;
+                            cout << "You can check your application status anytime by:" << endl;
+                            cout << "1. Saying 'check my applications'" << endl;
+                            cout << "2. Providing your CNIC: " << application.getCnicNumber() << endl;
+                            cout << "----------------------------------------" << endl;
 
-                            // Return after successful submission
                             cout << endl << "Press any key to return to main menu...";
                             getline(cin, userInput);
                             return;
@@ -580,10 +791,11 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
     }
 
     if (isValidMakeInput(makeInput, "scooter")) {
-        // Use the new tabular display
         bool hasData = displayScooterLoanOptionsTable(loans, loanCount, makeInput);
 
         if (hasData) {
+            int optionNumber = 0; // Declare here
+
             cout << endl << Config::CHATBOT_NAME << ": Would you like to see the detailed installment plan? (Y/N): ";
             getline(cin, userInput);
 
@@ -592,7 +804,7 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
                 getline(cin, userInput);
 
                 try {
-                    int optionNumber = stoi(trim(userInput));
+                    optionNumber = stoi(trim(userInput));
                     displayScooterInstallmentPlan(loans, loanCount, optionNumber);
                 }
                 catch (const exception&) {
@@ -604,8 +816,50 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
             getline(cin, userInput);
 
             if (toLower(trim(userInput)) == "y" || toLower(trim(userInput)) == "yes") {
+                // If optionNumber wasn't set, ask for it
+                if (optionNumber == 0) {
+                    cout << Config::CHATBOT_NAME << ": Which option would you like to apply for? Enter option number: ";
+                    getline(cin, userInput);
+
+                    try {
+                        optionNumber = stoi(trim(userInput));
+                    }
+                    catch (const exception&) {
+                        cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+                        return;
+                    }
+                }
+
                 try {
                     LoanApplication application = collector.collectApplicationForLoan("scooter", "Scooter Loan", fileManager);
+
+                    // Store the selected loan details
+                    application.setLoanType("Scooter Loan");
+                    application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
+
+                    // Get the actual loan details from the loans array
+                    string makeName = "Make " + makeInput;
+                    int currentOption = 0;
+                    bool loanFound = false;
+
+                    for (int i = 0; i < loanCount; i++) {
+                        if (loans[i].getMake() == makeName) {
+                            currentOption++;
+                            if (currentOption == optionNumber) {
+                                application.setLoanAmount(loans[i].getPrice());
+                                application.setDownPayment(loans[i].getDownPayment());
+                                application.setInstallmentMonths(loans[i].getInstallments());
+                                application.setMonthlyPayment(loans[i].calculateMonthlyInstallment());
+                                loanFound = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!loanFound) {
+                        cout << Config::CHATBOT_NAME << ": Error: Could not retrieve loan details." << endl;
+                        return;
+                    }
 
                     displayApplicationDetails(application);
 
@@ -616,6 +870,14 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
                         if (fileManager.saveApplication(application)) {
                             cout << endl << Config::CHATBOT_NAME << ": Application submitted!" << endl;
                             cout << "Application ID: " << application.getApplicationId() << endl;
+                            cout << endl << "----------------------------------------" << endl;
+                            cout << "You can check your application status anytime by:" << endl;
+                            cout << "1. Saying 'check my applications'" << endl;
+                            cout << "2. Providing your CNIC: " << application.getCnicNumber() << endl;
+                            cout << "----------------------------------------" << endl;
+
+                            cout << endl << "Press any key to return to main menu...";
+                            getline(cin, userInput);
                             return;
                         }
                     }
@@ -636,7 +898,9 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
     else {
         cout << Config::CHATBOT_NAME << ": Invalid make selection." << endl;
     }
-}void handlePersonalLoanSelection(bool& running, ApplicationCollector& collector, FileManager& fileManager) {
+}
+
+void handlePersonalLoanSelection(bool& running, ApplicationCollector& collector, FileManager& fileManager) {
     cout << Config::CHATBOT_NAME << ": Personal loan selected." << endl;
     cout << "Personal loans available with flexible terms." << endl;
 
@@ -648,6 +912,14 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
         try {
             LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan", fileManager);
 
+            // Store personal loan details (no specific product, so use defaults)
+            application.setLoanType("Personal Loan");
+            application.setLoanCategory("Standard Personal Loan");
+            application.setLoanAmount(500000); // Default example amount
+            application.setDownPayment(50000);  // Default 10%
+            application.setInstallmentMonths(36); // Default 3 years
+            application.setMonthlyPayment(12500); // Calculate based on defaults
+
             displayApplicationDetails(application);
 
             cout << endl << Config::CHATBOT_NAME << ": Submit? (Y/N): ";
@@ -657,6 +929,14 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
                 if (fileManager.saveApplication(application)) {
                     cout << Config::CHATBOT_NAME << ": Application submitted!" << endl;
                     cout << "ID: " << application.getApplicationId() << endl;
+                    cout << endl << "----------------------------------------" << endl;
+                    cout << "You can check your application status anytime by:" << endl;
+                    cout << "1. Saying 'check my applications'" << endl;
+                    cout << "2. Providing your CNIC: " << application.getCnicNumber() << endl;
+                    cout << "----------------------------------------" << endl;
+
+                    cout << endl << "Press any key to return to main menu...";
+                    getline(cin, userInput);
                     return;
                 }
             }
@@ -685,6 +965,10 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
     cout << endl << Config::CHATBOT_NAME << ": Hello! I'm " << Config::CHATBOT_NAME
         << ", your loan assistant." << endl;
     cout << Config::CHATBOT_NAME << ": I'm here to help you find the perfect loan." << endl;
+    cout << endl << "Options" << endl;
+    cout << "  - Type 'A' to apply for a new loan" << endl;
+    cout << "  - Type 'check my applications' to view your application status" << endl;
+    cout << "  - Type 'X' to exit" << endl;
 
     while (running) {
         cout << Config::CHATBOT_NAME << ": Press A to apply for a loan, or type your message: ";
@@ -694,6 +978,19 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
         if (lowerInput == Config::EXIT_COMMAND) {
             displayGoodbyeMessage();
             break;
+        }
+
+        // for natural chatbot responses
+        if (lowerInput == "check my applications" ||
+            lowerInput == "application status" ||
+            lowerInput == "check status" ||
+            lowerInput == "my application count" ||
+            lowerInput == "how many applications" ||
+            lowerInput == "check application" ||
+            (lowerInput.find("application") != string::npos && lowerInput.find("status") != string::npos) ||
+            (lowerInput.find("check") != string::npos && lowerInput.find("application") != string::npos)) {
+            checkApplicationStatusByCNIC(fileManager);
+            continue; 
         }
 
         if (lowerInput == "a") {
@@ -799,6 +1096,172 @@ void searchApplicationById(FileManager& fileManager) {
         }
         else {
             cout << "Invalid status." << endl;
+        }
+    }
+}
+
+void checkApplicationStatusByCNIC(FileManager& fileManager) {
+    bool keepChecking = true;
+
+    while (keepChecking) {
+        cout << endl << "=== CHECK APPLICATION STATUS ===" << endl;
+        cout << Config::CHATBOT_NAME << ": Please enter your CNIC (13 digits without dashes) or 'X' to exit: " << endl;
+
+        string cnic;
+        getline(cin, cnic);
+        cnic = trim(cnic);
+
+        // Allow user to exit
+        if (toLower(cnic) == "x" || toLower(cnic) == "exit") {
+            cout << Config::CHATBOT_NAME << ": Returning to main menu." << endl;
+            return;
+        }
+
+        // Validate CNIC format
+        if (cnic.length() != 13) {
+            cout << Config::CHATBOT_NAME << ": Invalid CNIC format. CNIC must be exactly 13 digits." << endl;
+            cout << "Example: 1234567891234" << endl;
+            cout << endl << "Would you like to try again? (Y/N): ";
+            string retry;
+            getline(cin, retry);
+            if (toLower(trim(retry)) != "y" && toLower(trim(retry)) != "yes") {
+                return;
+            }
+            continue;
+        }
+
+        // Check if all characters are digits
+        bool allDigits = true;
+        for (char c : cnic) {
+            if (!isdigit(static_cast<unsigned char>(c))) {
+                allDigits = false;
+                break;
+            }
+        }
+
+        if (!allDigits) {
+            cout << Config::CHATBOT_NAME << ": Invalid CNIC. Please enter only digits (no dashes or spaces)." << endl;
+            cout << "Example: 1234567891234" << endl;
+            cout << endl << "Would you like to try again? (Y/N): ";
+            string retry;
+            getline(cin, retry);
+            if (toLower(trim(retry)) != "y" && toLower(trim(retry)) != "yes") {
+                return;
+            }
+            continue;
+        }
+
+        // Get statistics
+        int submitted = 0, approved = 0, rejected = 0;
+        fileManager.getApplicationStatsByCNIC(cnic, submitted, approved, rejected);
+
+        int total = submitted + approved + rejected;
+
+        cout << endl << "========================================" << endl;
+        cout << "APPLICATION STATUS FOR CNIC: " << cnic << endl;
+        cout << "========================================" << endl;
+
+        if (total == 0) {
+            cout << Config::CHATBOT_NAME << ": No applications found for this CNIC." << endl;
+            cout << "Would you like to:" << endl;
+            cout << "  1. Try another CNIC" << endl;
+            cout << "  2. Apply for a loan (Type 'A')" << endl;
+            cout << "  3. Return to main menu (Type 'X')" << endl;
+            cout << "Your choice: ";
+
+            string choice;
+            getline(cin, choice);
+            choice = toLower(trim(choice));
+
+            if (choice == "1" || choice == "try again" || choice == "y" || choice == "yes") {
+                continue; // Try again
+            }
+            else {
+                return; // Exit to main menu
+            }
+        }
+        else {
+            cout << "Total Applications: " << total << endl;
+            cout << "----------------------------------------" << endl;
+            cout << "Pending (Submitted): " << submitted << " application(s)" << endl;
+            cout << "Approved: " << approved << " application(s)" << endl;
+            cout << "Rejected: " << rejected << " application(s)" << endl;
+            cout << "========================================" << endl;
+
+            if (submitted > 0) {
+                cout << Config::CHATBOT_NAME << ": You have " << submitted
+                    << " application(s) pending review." << endl;
+            }
+            if (approved > 0) {
+                cout << Config::CHATBOT_NAME << ": Congratulations! You have " << approved
+                    << " approved application(s)." << endl;
+            }
+            if (rejected > 0) {
+                cout << Config::CHATBOT_NAME << ": Unfortunately, " << rejected
+                    << " application(s) were rejected." << endl;
+            }
+            cout << "========================================" << endl;
+
+            // After showing results, ask if they want to check another CNIC
+            cout << endl << "Would you like to check another CNIC? (Y/N): ";
+            string another;
+            getline(cin, another);
+            if (toLower(trim(another)) == "y" || toLower(trim(another)) == "yes") {
+                continue;
+            }
+            else {
+                return;
+            }
+        }
+    }
+}
+
+void viewAllApplications(FileManager& fileManager) {
+    auto allApplications = fileManager.loadAllApplications();
+
+    if (allApplications.empty()) {
+        cout << endl << "No applications found in the system." << endl;
+        return;
+    }
+
+    cout << endl << "========== ALL APPLICATIONS ==========" << endl;
+    cout << "Total: " << allApplications.size() << " application(s)" << endl;
+    cout << "======================================" << endl << endl;
+
+    cout << "+-----+--------+-----------+------------------------+------------+--------------+" << endl;
+    cout << "| No  | App ID | Status    | Applicant Name         | Date       | Income (PKR) |" << endl;
+    cout << "+-----+--------+-----------+------------------------+------------+--------------+" << endl;
+
+    for (size_t i = 0; i < allApplications.size(); i++) {
+        const auto& app = allApplications[i];
+        cout << "| " << setw(3) << (i + 1) << " | "
+            << setw(6) << app.getApplicationId() << " | "
+            << setw(9) << left << app.getStatus() << " | "
+            << setw(22) << app.getFullName() << " | "
+            << setw(10) << app.getSubmissionDate() << " | "
+            << setw(12) << right << app.getAnnualIncome() << " |" << endl;
+    }
+
+    cout << "+-----+--------+-----------+------------------------+------------+--------------+" << endl;
+
+    // Option to view details
+    cout << endl << "Enter application number to view details (or press Enter to return): ";
+    string input;
+    getline(cin, input);
+    input = trim(input);
+
+    if (!input.empty()) {
+        try {
+            int appNum = stoi(input);
+            if (appNum >= 1 && appNum <= static_cast<int>(allApplications.size())) {
+                displayApplicationDetails(allApplications[appNum - 1]);
+            }
+            else {
+                cout << "Invalid application number." << endl;
+            }
+        }
+        catch (...) {
+            cout << "Invalid input." << endl;
         }
     }
 }

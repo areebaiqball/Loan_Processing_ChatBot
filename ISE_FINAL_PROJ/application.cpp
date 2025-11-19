@@ -34,6 +34,12 @@ LoanApplication::LoanApplication() {
     cnicBackImagePath = "";
     electricityBillImagePath = "";
     salarySlipImagePath = "";
+    loanType = "";
+    loanCategory = "";
+    loanAmount = 0;
+    downPayment = 0;
+    installmentMonths = 0;
+    monthlyPayment = 0;
 }
 
 // Getters implementation
@@ -61,6 +67,12 @@ string LoanApplication::getCnicFrontImagePath() const { return cnicFrontImagePat
 string LoanApplication::getCnicBackImagePath() const { return cnicBackImagePath; }
 string LoanApplication::getElectricityBillImagePath() const { return electricityBillImagePath; }
 string LoanApplication::getSalarySlipImagePath() const { return salarySlipImagePath; }
+string LoanApplication::getLoanType() const { return loanType; }
+string LoanApplication::getLoanCategory() const { return loanCategory; }
+long long LoanApplication::getLoanAmount() const { return loanAmount; }
+long long LoanApplication::getDownPayment() const { return downPayment; }
+int LoanApplication::getInstallmentMonths() const { return installmentMonths; }
+long long LoanApplication::getMonthlyPayment() const { return monthlyPayment; }
 
 // Setters implementation 
 void LoanApplication::setApplicationId(const string& id) {
@@ -240,6 +252,13 @@ void LoanApplication::setElectricityBillImagePath(const string& path) {
 void LoanApplication::setSalarySlipImagePath(const string& path) {
     salarySlipImagePath = path;
 }
+
+void LoanApplication::setLoanType(const string& type) { loanType = type; }
+void LoanApplication::setLoanCategory(const string& category) { loanCategory = category; }
+void LoanApplication::setLoanAmount(long long amount) { loanAmount = amount; }
+void LoanApplication::setDownPayment(long long payment) { downPayment = payment; }
+void LoanApplication::setInstallmentMonths(int months) { installmentMonths = months; }
+void LoanApplication::setMonthlyPayment(long long payment) { monthlyPayment = payment; }
 
 /// <summary>
 /// Adds an existing loan to the application

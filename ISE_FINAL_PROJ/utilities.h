@@ -100,4 +100,27 @@ inline string removeCommas(const string& numStr) {
     return result;
 }
 
+/// <summary>
+/// Gets month name from month number
+/// </summary>
+inline string getMonthName(int month) {
+    const string months[] = { "January", "February", "March", "April", "May", "June",
+                            "July", "August", "September", "October", "November", "December" };
+    if (month >= 1 && month <= 12) {
+        return months[month - 1];
+    }
+    return "Invalid";
+}
+
+/// <summary>
+/// Gets next month number (wraps around after December)
+/// </summary>
+inline void getNextMonth(int& month, int& year) {
+    month++;
+    if (month > 12) {
+        month = 1;
+        year++;
+    }
+}
+
 #endif

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <vector>
 
 using namespace std;
 
@@ -142,6 +143,7 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
     cout << "=== END COPY PROCESS ===" << endl << endl;
     return success;
 }
+
 bool FileManager::saveApplication(LoanApplication& application) {
     ofstream file(applicationsFile, ios::app);
 
@@ -240,10 +242,16 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << application.getNumberOfDependents() << Config::DELIMITER
             << application.getAnnualIncome() << Config::DELIMITER
             << application.getAvgElectricityBill() << Config::DELIMITER
-            << application.getCurrentElectricityBill() << Config::DELIMITER;
+            << application.getCurrentElectricityBill() << Config::DELIMITER
+            << application.getLoanType() << Config::DELIMITER
+            << application.getLoanCategory() << Config::DELIMITER
+            << application.getLoanAmount() << Config::DELIMITER
+            << application.getDownPayment() << Config::DELIMITER
+            << application.getInstallmentMonths() << Config::DELIMITER
+            << application.getMonthlyPayment() << Config::DELIMITER;
 
         // Existing loans
-        auto existingLoans = application.getExistingLoans();
+        vector<ExistingLoan> existingLoans = application.getExistingLoans();
         file << existingLoans.size() << Config::DELIMITER;
         for (size_t i = 0; i < existingLoans.size(); i++) {
             const auto& loan = existingLoans[i];
@@ -287,10 +295,11 @@ bool FileManager::saveApplication(LoanApplication& application) {
         return false;
     }
 }
+
 vector<LoanApplication> FileManager::loadAllApplications() const {
     vector<LoanApplication> applications;
-
     ifstream file(applicationsFile);
+
     if (!file.is_open()) {
         return applications;
     }
@@ -301,12 +310,15 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
 
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
-            if (parts.size() >= 25) {
+            if (parts.size() >= 23) {  // Changed from 25 to 23 (minimum fields before existing loans)
                 LoanApplication app;
 
+                // Basic application data
                 app.setApplicationId(parts[0]);
                 app.setStatus(parts[1]);
                 app.setSubmissionDate(parts[2]);
+
+                // Personal information
                 app.setFullName(parts[3]);
                 app.setFathersName(parts[4]);
                 app.setPostalAddress(parts[5]);
@@ -314,6 +326,8 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 app.setEmailAddress(parts[7]);
                 app.setCnicNumber(parts[8]);
                 app.setCnicExpiryDate(parts[9]);
+
+                // Employment & Financial
                 app.setEmploymentStatus(parts[10]);
                 app.setMaritalStatus(parts[11]);
                 app.setGender(parts[12]);
@@ -321,6 +335,14 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 app.setAnnualIncome(stoll(parts[14]));
                 app.setAvgElectricityBill(stoll(parts[15]));
                 app.setCurrentElectricityBill(stoll(parts[16]));
+
+                // Loan details
+                app.setLoanType(parts[17]);
+                app.setLoanCategory(parts[18]);
+                app.setLoanAmount(stoll(parts[19]));
+                app.setDownPayment(stoll(parts[20]));
+                app.setInstallmentMonths(stoi(parts[21]));
+                app.setMonthlyPayment(stoll(parts[22]));
 
                 applications.push_back(app);
             }
@@ -449,8 +471,12 @@ LoanApplication FileManager::findApplicationById(const string& applicationId) co
                 app.setAnnualIncome(stoll(parts[14]));
                 app.setAvgElectricityBill(stoll(parts[15]));
                 app.setCurrentElectricityBill(stoll(parts[16]));
-
-                // Note: For full implementation, you'd need to parse existing loans and references too
+                app.setLoanType(parts[17]);
+                app.setLoanCategory(parts[18]);
+                app.setLoanAmount(stoll(parts[19]));
+                app.setDownPayment(stoll(parts[20]));
+                app.setInstallmentMonths(stoi(parts[21]));
+                app.setMonthlyPayment(stoll(parts[22]));
 
             }
             catch (const exception& e) {
