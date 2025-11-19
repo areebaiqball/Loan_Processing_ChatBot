@@ -14,7 +14,6 @@
 using namespace std;
 
 // SE Principles: Namespace organization, Configuration management
-
 namespace Config {
     const string CHATBOT_NAME = "Dora";
     const string UTTERANCES_FILE = "Utterances.txt";
@@ -115,7 +114,6 @@ void displayApplicationDetails(const LoanApplication& app) {
     cout << "Application ID: " << app.getApplicationId() << endl;
     cout << "Status: " << app.getStatus() << endl;
 
-    // ADD REJECTION REASON DISPLAY
     if (app.getStatus() == "rejected" && !app.getRejectionReason().empty()) {
         cout << "Rejection Reason: " << app.getRejectionReason() << endl;
     }
@@ -139,7 +137,6 @@ void displayApplicationDetails(const LoanApplication& app) {
 
     cout << endl << "LOAN DETAILS:" << endl;
 
-    // FIX EMPTY LOAN TYPE DISPLAY
     string loanType = app.getLoanType();
     if (loanType.empty() || loanType == "0" || loanType == "Unknown") {
         loanType = "Personal Loan";
@@ -155,8 +152,8 @@ void displayApplicationDetails(const LoanApplication& app) {
     cout << endl << "EXISTING LOANS: " << app.getExistingLoansCount() << " loan(s)" << endl;
     cout << "========================================" << endl;
 }
-// SE Principles: Separation of Concerns, Single Responsibility
 
+// SE Principles: Separation of Concerns, Single Responsibility
 void viewApplicationsByStatus(FileManager& fileManager, const string& status) {
     auto allApplications = fileManager.loadAllApplications();
     vector<LoanApplication> filteredApps;
@@ -187,7 +184,6 @@ void reviewAndProcessApplications(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
     vector<LoanApplication> pendingApps;
 
-    // Filter pending applications
     for (size_t i = 0; i < allApplications.size(); i++) {
         if (allApplications[i].getStatus() == "submitted") {
             pendingApps.push_back(allApplications[i]);
@@ -250,7 +246,6 @@ void reviewAndProcessApplications(FileManager& fileManager) {
             newStatus = "rejected";
             cout << " Application " << fullApp.getApplicationId() << " will be REJECTED." << endl;
 
-            // GET REJECTION REASON
             cout << Config::CHATBOT_NAME << ": Enter reason for rejection: ";
             getline(cin, rejectionReason);
             rejectionReason = trim(rejectionReason);
@@ -270,7 +265,6 @@ void reviewAndProcessApplications(FileManager& fileManager) {
         input = toLower(trim(input));
 
         if (input == "y" || input == "yes") {
-            // Update the application status in file WITH REJECTION REASON
             if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus, rejectionReason)) {
                 cout << " Application status updated successfully!" << endl;
             }
@@ -332,8 +326,8 @@ void handleLenderMode(FileManager& fileManager) {
         }
     }
 }
-// SE Principles: Strategy Pattern, Composition, Separation of Concerns
 
+// SE Principles: Strategy Pattern, Composition, Separation of Concerns
 void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& running,
     ApplicationCollector& collector, FileManager& fileManager) {
 
@@ -372,7 +366,6 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
             return;
         }
 
-        // 🔥 FIX: Declare optionNumber outside the if block
         int optionNumber = 0;
 
         if (planInput == "y" || planInput == "yes") {
@@ -496,8 +489,8 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
         return;
     }
 }
-// SE Principles: Template Method Pattern, Code Reusability
 
+// SE Principles: Template Method Pattern, Code Reusability
 bool displayCarLoanOptionsByMake(const CarLoan loans[], int size, const string& makeNumber) {
     string makeName = "Make " + makeNumber;
     bool found = false;
@@ -557,7 +550,6 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
     bool hasData = displayCarLoanOptionsByMake(loans, loanCount, makeInput);
     if (!hasData) return;
 
-    // 🔥 FIX: Declare optionNumber here
     int optionNumber = 0;
 
     cout << endl << Config::CHATBOT_NAME << ": View detailed installment plan? (Y/N): ";
@@ -689,7 +681,6 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
     bool hasData = displayScooterLoanOptionsTable(loans, loanCount, makeInput);
     if (!hasData) return;
 
-    // 🔥 FIX: Declare optionNumber here
     int optionNumber = 0;
 
     cout << endl << Config::CHATBOT_NAME << ": View detailed installment plan? (Y/N): ";
@@ -778,8 +769,8 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
             cout << Config::CHATBOT_NAME << ": Application failed: " << e.what() << endl;
         }
     }
-}// SE Principles: Encapsulation, Data Validation
-
+}
+// SE Principles: Encapsulation, Data Validation
 void handlePersonalLoanSelection(bool& running, ApplicationCollector& collector, FileManager& fileManager) {
     cout << Config::CHATBOT_NAME << ": Personal loan selected." << endl;
     cout << "Personal loans available with flexible terms." << endl;
@@ -904,7 +895,6 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
 }
 
 // SE Principles: Information Expert Pattern, Data Display
-
 void displayApplicationStatistics(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
 
@@ -1028,8 +1018,8 @@ void viewAllApplications(FileManager& fileManager) {
         }
     }
 }
-// SE Principles: Data Validation, Defensive Programming, User Experience
 
+// SE Principles: Data Validation, Defensive Programming, User Experience
 void generateUserInstallmentPlan(const LoanApplication& application) {
     cout << endl << "💫 " << Config::CHATBOT_NAME
         << ": Generating your monthly installment plan..." << endl;
@@ -1163,7 +1153,6 @@ void generateUserInstallmentPlan(const LoanApplication& application) {
 }
 
 // SE Principles: Data filtering, Search operations
-
 void checkApplicationStatusByCNIC(FileManager& fileManager) {
     bool keepChecking = true;
 
@@ -1242,7 +1231,6 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
         else {
             int submitted = 0, approved = 0, rejected = 0;
 
-            // UPDATED TABLE WITH REJECTION REASON
             cout << "Your Applications:" << endl;
             cout << "+-----+--------+-----------+------------------------+---------------------+------------------+" << endl;
             cout << "| No  | App ID | Status    | Loan Type              | Submission Date     | Rejection Reason |" << endl;
@@ -1256,7 +1244,6 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
                 else if (status == "approved") approved++;
                 else if (status == "rejected") rejected++;
 
-                // FIX EMPTY LOAN TYPE DISPLAY
                 string displayLoanType = app.getLoanType();
                 if (displayLoanType.empty() || displayLoanType == "0" || displayLoanType == "Unknown") {
                     displayLoanType = "Personal Loan";
@@ -1356,7 +1343,6 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
     }
 }
 // SE Principles: Dependency Injection, Initialization, Error Handling
-
 int main() {
     // Initialize data structures
     Utterance utterances[Config::MAX_UTTERANCES];

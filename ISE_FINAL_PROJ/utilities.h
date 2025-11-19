@@ -8,8 +8,9 @@
 #include <ctime>
 using namespace std;
 
-// SE Principles: Namespace organization, Utility functions
-
+/// <summary>
+/// Configuration constants for the loan processing system
+/// </summary>
 namespace Config {
     extern const string CHATBOT_NAME;
     extern const string UTTERANCES_FILE;
@@ -23,6 +24,12 @@ namespace Config {
 }
 
 // String Processing Utilities
+
+/// <summary>
+/// Removes leading and trailing whitespace from a string
+/// </summary>
+/// <param name="str">Input string to trim</param>
+/// <returns>Trimmed string without leading/trailing whitespace</returns>
 inline string trim(const string& str) {
     if (str.empty()) return "";
 
@@ -37,6 +44,11 @@ inline string trim(const string& str) {
     return (start <= end) ? str.substr(start, end - start + 1) : "";
 }
 
+/// <summary>
+/// Converts a string to lowercase
+/// </summary>
+/// <param name="str">Input string to convert</param>
+/// <returns>String converted to lowercase</returns>
 inline string toLower(const string& str) {
     string result = str;
     for (size_t i = 0; i < result.length(); i++) {
@@ -45,6 +57,12 @@ inline string toLower(const string& str) {
     return result;
 }
 
+/// <summary>
+/// Splits a string into tokens using specified delimiter
+/// </summary>
+/// <param name="line">Input string to split</param>
+/// <param name="delimiter">Character used to separate tokens</param>
+/// <returns>Vector of trimmed token strings</returns>
 inline vector<string> splitString(const string& line, char delimiter) {
     vector<string> tokens;
     string current = "";
@@ -66,6 +84,11 @@ inline vector<string> splitString(const string& line, char delimiter) {
     return tokens;
 }
 
+/// <summary>
+/// Removes commas from numeric strings for parsing
+/// </summary>
+/// <param name="numStr">String containing numbers with commas</param>
+/// <returns>String with commas removed</returns>
 inline string removeCommas(const string& numStr) {
     string result = "";
     for (char ch : numStr) {
@@ -75,6 +98,12 @@ inline string removeCommas(const string& numStr) {
 }
 
 // Date and Time Utilities
+
+/// <summary>
+/// Gets the full month name from month number
+/// </summary>
+/// <param name="month">Month number (1-12)</param>
+/// <returns>Full month name as string</returns>
 inline string getMonthName(int month) {
     const string months[] = {
         "January", "February", "March", "April", "May", "June",
@@ -83,6 +112,11 @@ inline string getMonthName(int month) {
     return (month >= 1 && month <= 12) ? months[month - 1] : "Invalid";
 }
 
+/// <summary>
+/// Advances to the next month, handling year rollover
+/// </summary>
+/// <param name="month">Current month (will be modified)</param>
+/// <param name="year">Current year (will be modified if month rolls over)</param>
 inline void getNextMonth(int& month, int& year) {
     month++;
     if (month > 12) {
@@ -91,6 +125,10 @@ inline void getNextMonth(int& month, int& year) {
     }
 }
 
+/// <summary>
+/// Gets current system date in DD-MM-YYYY format
+/// </summary>
+/// <returns>Current date as string in DD-MM-YYYY format</returns>
 inline string getCurrentDate() {
     time_t now = time(0);
     struct tm timeinfo = {};
@@ -108,6 +146,12 @@ inline string getCurrentDate() {
     return day + "-" + month + "-" + year;
 }
 
+/// <summary>
+/// Compares two dates in DD-MM-YYYY format
+/// </summary>
+/// <param name="date1">First date to compare</param>
+/// <param name="date2">Second date to compare</param>
+/// <returns>-1 if date1 < date2, 0 if equal, 1 if date1 > date2</returns>
 inline int compareDates(const string& date1, const string& date2) {
     int day1 = stoi(date1.substr(0, 2));
     int month1 = stoi(date1.substr(3, 2));

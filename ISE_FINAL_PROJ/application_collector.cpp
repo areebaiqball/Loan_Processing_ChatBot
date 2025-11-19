@@ -10,7 +10,6 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
     cout << "I'll need to collect some information from you." << endl << endl;
 
     try {
-        // SET CURRENT DATE AT THE BEGINNING
         string currentDate = getCurrentDate();
         application.setSubmissionDate(currentDate);
 
@@ -70,7 +69,6 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
     LoanApplication application;
 
     try {
-        // SET CURRENT DATE AT THE BEGINNING
         string currentDate = getCurrentDate();
         application.setSubmissionDate(currentDate);
 
@@ -102,7 +100,6 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
             throw runtime_error("Document information collection failed");
         }
 
-        // Step 6.5: Installment Start Date
         cout << endl << "STEP 6.5/7: Installment Payment Start Date" << endl;
         collectInstallmentStartDate(application);
 
@@ -655,7 +652,7 @@ string ApplicationCollector::getValidatedCNICIssueDate(const string& prompt) {
             int comparison = compareDates(input, currentDate);
 
             if (comparison > 0) {
-                cout << Config::CHATBOT_NAME << ": ❌ Issue date cannot be in the future. Please enter a valid issue date." << endl;
+                cout << Config::CHATBOT_NAME << ":  Issue date cannot be in the future. Please enter a valid issue date." << endl;
                 cout << "Current date: " << currentDate << endl;
                 cout << "Please try again." << endl;
                 continue;
@@ -1059,11 +1056,11 @@ void ApplicationCollector::collectInstallmentStartDate(LoanApplication& applicat
         try {
             startMonth = stoi(trim(monthInput));
             if (startMonth < 1 || startMonth > 12) {
-                cout << "❌ Month must be between 1 and 12." << endl;
+                cout << " Month must be between 1 and 12." << endl;
             }
         }
         catch (...) {
-            cout << "❌ Invalid input. Please enter a number (1-12)." << endl;
+            cout << " Invalid input. Please enter a number (1-12)." << endl;
             startMonth = 0;
         }
     }
@@ -1079,17 +1076,17 @@ void ApplicationCollector::collectInstallmentStartDate(LoanApplication& applicat
         try {
             startYear = stoi(trim(yearInput));
             if (startYear < 2024 || startYear > 2100) {
-                cout << "❌ Year must be between 2024 and 2100." << endl;
+                cout << " Year must be between 2024 and 2100." << endl;
             }
         }
         catch (...) {
-            cout << "❌ Invalid input. Please enter a valid year." << endl;
+            cout << " Invalid input. Please enter a valid year." << endl;
             startYear = 0;
         }
     }
     application.setInstallmentStartYear(startYear);
 
-    cout << "✅ Installment start date set to: " << getMonthName(startMonth) << " " << startYear << endl;
+    cout << " Installment start date set to: " << getMonthName(startMonth) << " " << startYear << endl;
 }
 bool ApplicationCollector::getValidatedYesNo(const string& prompt) {
     while (true) {
@@ -1119,10 +1116,10 @@ bool ApplicationCollector::getValidatedYesNo(const string& prompt) {
             }
 
             if (isNumber) {
-                cout << Config::CHATBOT_NAME << ": ❌ Invalid input. Please enter 'Y' for Yes or 'N' for No, not numbers." << endl;
+                cout << Config::CHATBOT_NAME << ":  Invalid input. Please enter 'Y' for Yes or 'N' for No, not numbers." << endl;
             }
             else {
-                cout << Config::CHATBOT_NAME << ": ❌ Invalid input. Please enter 'Y' for Yes or 'N' for No." << endl;
+                cout << Config::CHATBOT_NAME << ":  Invalid input. Please enter 'Y' for Yes or 'N' for No." << endl;
             }
         }
     }

@@ -5,7 +5,6 @@
 using namespace std;
 
 // SE Principles: Encapsulation, Single Responsibility
-
 class ScooterLoan {
 private:
     string make;
@@ -42,7 +41,6 @@ public:
     void setPrice(long long p);
     void setDownPayment(long long dp);
 
-    // Business methods
     long long calculateMonthlyInstallment() const;
     void displayInstallmentPlan() const;
 };

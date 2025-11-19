@@ -270,10 +270,10 @@ void LoanApplication::setMonthlyPayment(long long payment) { monthlyPayment = pa
 void LoanApplication::addExistingLoan(const ExistingLoan& loan) {
     existingLoans.push_back(loan);
 }
+
 /// <summary>
 /// Clears all existing loans from the application
 /// </summary>
-
 void LoanApplication::clearExistingLoans() {
     existingLoans.clear();
 }
@@ -285,11 +285,11 @@ void LoanApplication::clearExistingLoans() {
 int LoanApplication::getExistingLoansCount() const {
     return existingLoans.size();
 }
+
 /// <summary>
 /// Validates existing loans data
 /// </summary>
 /// <returns>Validation result object</returns>
-
 ValidationResult LoanApplication::validateExistingLoans() const {
     ValidationResult result;
 
@@ -337,6 +337,7 @@ ValidationResult LoanApplication::validateReferences() const {
 
     return result;
 }
+
 /// <summary>
 /// Validates debt-to-income ratio
 /// </summary>
@@ -432,6 +433,7 @@ ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
 
     return result;
 }
+
 /// <summary>
 /// Validates income for specific loan type
 /// </summary>

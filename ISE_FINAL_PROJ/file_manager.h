@@ -8,7 +8,6 @@
 using namespace std;
 
 // SE Principles: Single Responsibility, Encapsulation, Facade Pattern
-
 class FileManager {
 private:
     string applicationsFile;
@@ -22,7 +21,6 @@ public:
     FileManager(const string& appsFile = "applications.txt",
         const string& imagesDir = "images/");
 
-    // Core file operations
     bool saveApplication(LoanApplication& application);
     vector<LoanApplication> loadAllApplications() const;
     LoanApplication findApplicationById(const string& applicationId) const;
