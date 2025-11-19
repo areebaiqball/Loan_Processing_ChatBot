@@ -166,13 +166,15 @@ bool FileManager::saveApplication(LoanApplication& application) {
             }
         }
 
-        // Set default status and date if not set
+        // Set default status and date if not set - FIXED: Use current date
         if (application.getStatus().empty()) {
             application.setStatus("submitted");
         }
 
         if (application.getSubmissionDate().empty()) {
-            application.setSubmissionDate("01-01-2024");
+            // USE CURRENT DATE INSTEAD OF FIXED DATE
+            string currentDate = getCurrentDate();
+            application.setSubmissionDate(currentDate);
         }
 
         // Copy images
@@ -215,7 +217,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
         // Write application data to file
         file << application.getApplicationId() << Config::DELIMITER
             << application.getStatus() << Config::DELIMITER
-            << application.getSubmissionDate() << Config::DELIMITER
+            << application.getSubmissionDate() << Config::DELIMITER  // This will now be current date
             << application.getFullName() << Config::DELIMITER
             << application.getFathersName() << Config::DELIMITER
             << application.getPostalAddress() << Config::DELIMITER
@@ -237,7 +239,8 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << application.getInstallmentMonths() << Config::DELIMITER
             << application.getMonthlyPayment() << Config::DELIMITER
             << application.getInstallmentStartMonth() << Config::DELIMITER
-            << application.getInstallmentStartYear() << Config::DELIMITER;
+            << application.getInstallmentStartYear() << Config::DELIMITER
+            << application.getRejectionReason() << Config::DELIMITER;
 
         // Existing loans
         vector<ExistingLoan> existingLoans = application.getExistingLoans();
@@ -275,6 +278,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
 
         file.close();
         cout << "Application saved successfully with ID: " << application.getApplicationId() << endl;
+        cout << "Submission Date: " << application.getSubmissionDate() << endl;  // Show the actual date
         return true;
 
     }
@@ -303,7 +307,6 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
 
-            // 🔥 FIX: Handle both old format (17 fields) and new format (23+ fields)
             if (parts.size() < 17) {
                 cerr << "Warning: Line " << lineNumber << " has insufficient fields (" << parts.size() << ")" << endl;
                 continue;
@@ -325,7 +328,7 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
             if (!parts[8].empty()) app.setCnicNumber(parts[8]);
             if (!parts[9].empty()) app.setCnicExpiryDate(parts[9]);
 
-            // Employment & Financial - WITH ERROR HANDLING
+            // Employment & Financial
             if (!parts[10].empty()) app.setEmploymentStatus(parts[10]);
             if (!parts[11].empty()) app.setMaritalStatus(parts[11]);
             if (!parts[12].empty()) app.setGender(parts[12]);
@@ -359,9 +362,16 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 cerr << "Warning: Invalid current bill at line " << lineNumber << ": " << parts[16] << endl;
             }
 
-            // 🔥 FIX: Load loan-specific details if available
+            // Loan details - IMPROVED LOAN TYPE HANDLING
             if (parts.size() > 17 && !parts[17].empty()) {
-                app.setLoanType(parts[17]);
+                string loanType = parts[17];
+                // Fix empty or invalid loan types
+                if (loanType == "0" || loanType == "Unknown" || loanType.empty()) {
+                    app.setLoanType("Personal Loan");
+                }
+                else {
+                    app.setLoanType(loanType);
+                }
             }
             else {
                 app.setLoanType("Personal Loan"); // Default
@@ -412,6 +422,11 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 catch (...) {
                     app.setMonthlyPayment(0);
                 }
+            }
+
+            // Rejection reason - ADD THIS SECTION
+            if (parts.size() > 25 && !parts[25].empty()) {
+                app.setRejectionReason(parts[25]);
             }
 
             applications.push_back(app);
@@ -541,8 +556,7 @@ void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, 
         }
     }
 }
-
-bool FileManager::updateApplicationStatus(const string& applicationId, const string& newStatus) {
+bool FileManager::updateApplicationStatus(const string& applicationId, const string& newStatus, const string& rejectionReason) {
     // Read all applications
     vector<string> lines;
     ifstream file(applicationsFile);
@@ -562,6 +576,11 @@ bool FileManager::updateApplicationStatus(const string& applicationId, const str
         if (!parts.empty() && parts[0] == applicationId) {
             // Update the status (second field)
             parts[1] = newStatus;
+
+            // Update rejection reason if provided (field index 25 - adjust based on your structure)
+            if (!rejectionReason.empty() && parts.size() > 25) {
+                parts[25] = rejectionReason;
+            }
 
             // Reconstruct the line
             string updatedLine;
@@ -596,6 +615,9 @@ bool FileManager::updateApplicationStatus(const string& applicationId, const str
     outFile.close();
 
     cout << "Application " << applicationId << " status updated to: " << newStatus << endl;
+    if (!rejectionReason.empty()) {
+        cout << "Rejection reason: " << rejectionReason << endl;
+    }
     return true;
 }
 

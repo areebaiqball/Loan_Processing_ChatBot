@@ -114,6 +114,12 @@ void displayApplicationDetails(const LoanApplication& app) {
     cout << "========================================" << endl;
     cout << "Application ID: " << app.getApplicationId() << endl;
     cout << "Status: " << app.getStatus() << endl;
+
+    // ADD REJECTION REASON DISPLAY
+    if (app.getStatus() == "rejected" && !app.getRejectionReason().empty()) {
+        cout << "Rejection Reason: " << app.getRejectionReason() << endl;
+    }
+
     cout << "Submission Date: " << app.getSubmissionDate() << endl;
     cout << endl << "PERSONAL INFORMATION:" << endl;
     cout << "  Full Name: " << app.getFullName() << endl;
@@ -132,7 +138,14 @@ void displayApplicationDetails(const LoanApplication& app) {
     cout << "  Current Electricity Bill: PKR " << app.getCurrentElectricityBill() << endl;
 
     cout << endl << "LOAN DETAILS:" << endl;
-    cout << "  Loan Type: " << app.getLoanType() << endl;
+
+    // FIX EMPTY LOAN TYPE DISPLAY
+    string loanType = app.getLoanType();
+    if (loanType.empty() || loanType == "0" || loanType == "Unknown") {
+        loanType = "Personal Loan";
+    }
+    cout << "  Loan Type: " << loanType << endl;
+
     cout << "  Category: " << app.getLoanCategory() << endl;
     cout << "  Total Amount: PKR " << app.getLoanAmount() << endl;
     cout << "  Down Payment: PKR " << app.getDownPayment() << endl;
@@ -194,7 +207,7 @@ void reviewAndProcessApplications(FileManager& fileManager) {
             << " | Income: PKR " << pendingApps[i].getAnnualIncome() << endl;
     }
 
-    cout << endl << "Enter application number to review (or X to cancel): ";
+    cout << endl << Config::CHATBOT_NAME << ": Enter application number to review (or X to cancel): ";
     string input;
     getline(cin, input);
     input = trim(input);
@@ -206,7 +219,7 @@ void reviewAndProcessApplications(FileManager& fileManager) {
     try {
         int appNum = stoi(input);
         if (appNum < 1 || appNum > static_cast<int>(pendingApps.size())) {
-            cout << "Invalid application number." << endl;
+            cout << Config::CHATBOT_NAME << ": Invalid application number." << endl;
             return;
         }
 
@@ -215,61 +228,63 @@ void reviewAndProcessApplications(FileManager& fileManager) {
         // Load full application details
         LoanApplication fullApp = fileManager.findApplicationById(selectedApp.getApplicationId());
         if (fullApp.getApplicationId().empty()) {
-            cout << "Error: Could not load application details." << endl;
+            cout << Config::CHATBOT_NAME << ": Error: Could not load application details." << endl;
             return;
         }
 
         displayApplicationDetails(fullApp);
 
-        cout << endl << "Action: (A)pprove or (R)eject this application? ";
+        cout << endl << Config::CHATBOT_NAME << ": Action: (A)pprove or (R)eject this application? ";
         getline(cin, input);
         input = toLower(trim(input));
 
         string newStatus;
+        string rejectionReason = "";
+
         if (input == "a" || input == "approve") {
             newStatus = "approved";
             cout << " Application " << fullApp.getApplicationId() << " has been APPROVED." << endl;
-            cout << " The applicant can now generate their installment plan when checking their application status." << endl;
+            cout << Config::CHATBOT_NAME << ": The applicant can now generate their installment plan when checking their application status." << endl;
         }
         else if (input == "r" || input == "reject") {
             newStatus = "rejected";
-            cout << "❌ Application " << fullApp.getApplicationId() << " will be REJECTED." << endl;
+            cout << " Application " << fullApp.getApplicationId() << " will be REJECTED." << endl;
+
+            // GET REJECTION REASON
+            cout << Config::CHATBOT_NAME << ": Enter reason for rejection: ";
+            getline(cin, rejectionReason);
+            rejectionReason = trim(rejectionReason);
+
+            if (rejectionReason.empty()) {
+                cout << Config::CHATBOT_NAME << ": No rejection reason provided. Application will be rejected without specific reason." << endl;
+            }
         }
         else {
-            cout << "Invalid action. No changes made." << endl;
+            cout << Config::CHATBOT_NAME << ": Invalid action. No changes made." << endl;
             return;
         }
 
         // Ask for confirmation
-        cout << "Confirm this action? (Y/N): ";
+        cout << Config::CHATBOT_NAME << ": Confirm this action? (Y/N): ";
         getline(cin, input);
         input = toLower(trim(input));
 
         if (input == "y" || input == "yes") {
-            // Update the application status in file
-            if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus)) {
+            // Update the application status in file WITH REJECTION REASON
+            if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus, rejectionReason)) {
                 cout << " Application status updated successfully!" << endl;
-
-                // Optional: Add reason for rejection
-                if (newStatus == "rejected") {
-                    cout << "Enter reason for rejection (optional): ";
-                    getline(cin, input);
-                    if (!input.empty()) {
-                        cout << "Reason noted: " << input << endl;
-                    }
-                }
             }
             else {
-                cout << "❌ Failed to update application status." << endl;
+                cout << " Failed to update application status." << endl;
             }
         }
         else {
-            cout << "Action cancelled." << endl;
+            cout << Config::CHATBOT_NAME << ": Action cancelled." << endl;
         }
 
     }
     catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
+        cout << Config::CHATBOT_NAME << ": Error: " << e.what() << endl;
     }
 }
 
@@ -1167,7 +1182,7 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
         if (cnic.length() != 13) {
             cout << Config::CHATBOT_NAME << ": Invalid CNIC format. Must be exactly 13 digits." << endl;
             cout << "Example: 1234567891234" << endl;
-            cout << endl << "Try again? (Y/N): ";
+            cout << endl << Config::CHATBOT_NAME << ": Try again? (Y/N): ";
             string retry;
             getline(cin, retry);
             if (toLower(trim(retry)) != "y" && toLower(trim(retry)) != "yes") {
@@ -1188,7 +1203,7 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
         if (!allDigits) {
             cout << Config::CHATBOT_NAME << ": Invalid CNIC. Enter only digits (no dashes or spaces)." << endl;
             cout << "Example: 1234567891234" << endl;
-            cout << endl << "Try again? (Y/N): ";
+            cout << endl << Config::CHATBOT_NAME << ": Try again? (Y/N): ";
             string retry;
             getline(cin, retry);
             if (toLower(trim(retry)) != "y" && toLower(trim(retry)) != "yes") {
@@ -1206,10 +1221,10 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
 
         if (total == 0) {
             cout << Config::CHATBOT_NAME << ": No applications found for this CNIC." << endl;
-            cout << "Would you like to:" << endl;
+            cout << Config::CHATBOT_NAME << ": Would you like to:" << endl;
             cout << "  1. Try another CNIC" << endl;
             cout << "  2. Return to main menu (Type 'X')" << endl;
-            cout << "Your choice: ";
+            cout << Config::CHATBOT_NAME << ": Your choice: ";
 
             string choice;
             getline(cin, choice);
@@ -1225,10 +1240,11 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
         else {
             int submitted = 0, approved = 0, rejected = 0;
 
+            // UPDATED TABLE WITH REJECTION REASON
             cout << "Your Applications:" << endl;
-            cout << "+-----+--------+-----------+------------------------+---------------------+" << endl;
-            cout << "| No  | App ID | Status    | Loan Type              | Submission Date     |" << endl;
-            cout << "+-----+--------+-----------+------------------------+---------------------+" << endl;
+            cout << "+-----+--------+-----------+------------------------+---------------------+------------------+" << endl;
+            cout << "| No  | App ID | Status    | Loan Type              | Submission Date     | Rejection Reason |" << endl;
+            cout << "+-----+--------+-----------+------------------------+---------------------+------------------+" << endl;
 
             for (size_t i = 0; i < userApplications.size(); i++) {
                 const auto& app = userApplications[i];
@@ -1238,13 +1254,25 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
                 else if (status == "approved") approved++;
                 else if (status == "rejected") rejected++;
 
+                // FIX EMPTY LOAN TYPE DISPLAY
+                string displayLoanType = app.getLoanType();
+                if (displayLoanType.empty() || displayLoanType == "0" || displayLoanType == "Unknown") {
+                    displayLoanType = "Personal Loan";
+                }
+
+                string rejectionReason = (status == "rejected" && !app.getRejectionReason().empty())
+                    ? app.getRejectionReason()
+                    : "N/A";
+
                 cout << "| " << setw(3) << (i + 1) << " | "
                     << setw(6) << app.getApplicationId() << " | "
                     << setw(9) << left << status << " | "
-                    << setw(22) << app.getLoanType() << " | "
-                    << setw(19) << app.getSubmissionDate() << " |" << endl;
+                    << setw(22) << displayLoanType << " | "
+                    << setw(19) << app.getSubmissionDate() << " | "
+                    << setw(16) << rejectionReason << " |" << endl;
             }
-            cout << "+-----+--------+-----------+------------------------+---------------------+" << endl;
+
+            cout << "+-----+--------+-----------+------------------------+---------------------+------------------+" << endl;
 
             cout << endl << "Summary:" << endl;
             cout << "  Pending Review: " << submitted << " application(s)" << endl;
@@ -1256,7 +1284,7 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
             if (approved > 0) {
                 cout << endl << Config::CHATBOT_NAME << ": You have " << approved
                     << " approved loan application(s)." << endl;
-                cout << "Generate monthly installment plan? (Y/N): ";
+                cout << Config::CHATBOT_NAME << ": Generate monthly installment plan? (Y/N): ";
 
                 string planChoice;
                 getline(cin, planChoice);
@@ -1274,21 +1302,26 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
                         generateUserInstallmentPlan(approvedApps[0]);
                     }
                     else if (approvedApps.size() > 1) {
-                        cout << endl << "Select an approved application:" << endl;
+                        cout << endl << Config::CHATBOT_NAME << ": Select an approved application:" << endl;
                         cout << "+-----+--------+------------------------+---------------------+" << endl;
                         cout << "| No  | App ID | Loan Type              | Loan Amount         |" << endl;
                         cout << "+-----+--------+------------------------+---------------------+" << endl;
 
                         for (size_t i = 0; i < approvedApps.size(); i++) {
                             const auto& app = approvedApps[i];
+                            string displayLoanType = app.getLoanType();
+                            if (displayLoanType.empty() || displayLoanType == "0" || displayLoanType == "Unknown") {
+                                displayLoanType = "Personal Loan";
+                            }
+
                             cout << "| " << setw(3) << (i + 1) << " | "
                                 << setw(6) << app.getApplicationId() << " | "
-                                << setw(22) << app.getLoanType() << " | "
+                                << setw(22) << displayLoanType << " | "
                                 << "PKR " << setw(13) << app.getLoanAmount() << " |" << endl;
                         }
                         cout << "+-----+--------+------------------------+---------------------+" << endl;
 
-                        cout << "Enter application number: ";
+                        cout << Config::CHATBOT_NAME << ": Enter application number: ";
                         string appChoice;
                         getline(cin, appChoice);
 
@@ -1298,17 +1331,17 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
                                 generateUserInstallmentPlan(approvedApps[selectedApp - 1]);
                             }
                             else {
-                                cout << "Invalid application number." << endl;
+                                cout << Config::CHATBOT_NAME << ": Invalid application number." << endl;
                             }
                         }
                         catch (...) {
-                            cout << "Invalid input." << endl;
+                            cout << Config::CHATBOT_NAME << ": Invalid input." << endl;
                         }
                     }
                 }
             }
 
-            cout << endl << "Check another CNIC? (Y/N): ";
+            cout << endl << Config::CHATBOT_NAME << ": Check another CNIC? (Y/N): ";
             string another;
             getline(cin, another);
             if (toLower(trim(another)) == "y" || toLower(trim(another)) == "yes") {

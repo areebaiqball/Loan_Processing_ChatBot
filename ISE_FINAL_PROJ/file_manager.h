@@ -34,8 +34,10 @@ public:
     // Statistics and status
     void getApplicationStatsByCNIC(const string& cnic,
         int& submitted, int& approved, int& rejected) const;
-
-    bool updateApplicationStatus(const string& applicationId, const string& newStatus);
+    bool updateApplicationStatus(const string& applicationId, const string& newStatus, const string& rejectionReason = "");
 };
+
+    
+
 
 #endif

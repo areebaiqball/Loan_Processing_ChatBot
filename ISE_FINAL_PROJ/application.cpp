@@ -42,6 +42,7 @@ LoanApplication::LoanApplication() {
     monthlyPayment = 0;
     installmentStartMonth = 0;
     installmentStartYear = 0;
+    rejectionReason = ""; 
 }
 
 // Getters implementation
@@ -469,4 +470,11 @@ bool LoanApplication::validateIncomeForLoanType(const string& loanType, long lon
     }
 
     return true;
+}
+string LoanApplication::getRejectionReason() const {
+    return rejectionReason;
+}
+
+void LoanApplication::setRejectionReason(const string& reason) {
+    rejectionReason = reason;
 }

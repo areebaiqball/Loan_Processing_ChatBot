@@ -32,6 +32,9 @@ private:
     string getValidatedCNICExpiryDate(const string& prompt);
     void collectInstallmentStartDate(LoanApplication& application);
 
+   
+    bool getValidatedYesNo(const string& prompt);
+
 public:
     LoanApplication collectCompleteApplication();
     LoanApplication collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager);

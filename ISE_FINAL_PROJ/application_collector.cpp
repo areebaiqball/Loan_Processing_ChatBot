@@ -10,6 +10,10 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
     cout << "I'll need to collect some information from you." << endl << endl;
 
     try {
+        // SET CURRENT DATE AT THE BEGINNING
+        string currentDate = getCurrentDate();
+        application.setSubmissionDate(currentDate);
+
         cout << "STEP 1/5: Personal Information" << endl;
         if (!collectPersonalInfo(application)) {
             throw runtime_error("Personal information collection failed");
@@ -66,6 +70,10 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
     LoanApplication application;
 
     try {
+        // SET CURRENT DATE AT THE BEGINNING
+        string currentDate = getCurrentDate();
+        application.setSubmissionDate(currentDate);
+
         // Step 1: Personal Information
         if (!collectPersonalInfo(application)) {
             throw runtime_error("Personal information collection failed");
@@ -94,7 +102,7 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
             throw runtime_error("Document information collection failed");
         }
 
-        // Step 6.5: Installment Start Date - NEW STEP
+        // Step 6.5: Installment Start Date
         cout << endl << "STEP 6.5/7: Installment Payment Start Date" << endl;
         collectInstallmentStartDate(application);
 
@@ -122,38 +130,38 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
 
     try {
         string fullName = getValidatedString(
-            "Please enter your full name: ",
+            Config::CHATBOT_NAME + ": Please enter your full name: ",
             "Full name",
             1, 100
         );
         application.setFullName(fullName);
 
         string fathersName = getValidatedString(
-            "Please enter your father's name: ",
+            Config::CHATBOT_NAME + ": Please enter your father's name: ",
             "Father's name",
             1, 100
         );
         application.setFathersName(fathersName);
 
         string postalAddress = getValidatedString(
-            "Please enter your complete postal address: ",
+            Config::CHATBOT_NAME + ": Please enter your complete postal address: ",
             "Postal address",
             1, 255
         );
         application.setPostalAddress(postalAddress);
 
-        string contactNumber = getValidatedPhone("Please enter your contact number: ");
+        string contactNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Please enter your contact number: ");
         application.setContactNumber(contactNumber);
 
-        string email = getValidatedEmail("Please enter your email address: ");
+        string email = getValidatedEmail(Config::CHATBOT_NAME + ": Please enter your email address: ");
         application.setEmailAddress(email);
 
-        string cnic = getValidatedCNIC("Please enter your CNIC number (13 digits without dashes): ");
+        string cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Please enter your CNIC number (13 digits without dashes): ");
         application.setCnicNumber(cnic);
 
-        string cnicIssueDate = getValidatedCNICIssueDate("Please enter your CNIC issue date (DD-MM-YYYY): ");
+        string cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Please enter your CNIC issue date (DD-MM-YYYY): ");
 
-        string cnicExpiry = getValidatedCNICExpiryDate("Please enter your CNIC expiry date (DD-MM-YYYY): ");
+        string cnicExpiry = getValidatedCNICExpiryDate(Config::CHATBOT_NAME + ": Please enter your CNIC expiry date (DD-MM-YYYY): ");
         application.setCnicExpiryDate(cnicExpiry);
 
         cout << Config::CHATBOT_NAME << ": Personal information collected successfully!" << endl;
@@ -168,7 +176,6 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
         return false;
     }
 }
-
 bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& application) {
     cout << endl << "=== EMPLOYMENT & FINANCIAL INFORMATION ===" << endl;
 
@@ -182,21 +189,21 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
             "Unemployed"
         };
         string employmentStatus = getSelectionFromOptions(
-            "Please select your current employment status:",
+            Config::CHATBOT_NAME + ": Please select your current employment status:",
             employmentOptions
         );
         application.setEmploymentStatus(employmentStatus);
 
         if (employmentStatus == "Self-employed") {
             string businessType = getValidatedString(
-                "Please describe your business/occupation: ",
+                Config::CHATBOT_NAME + ": Please describe your business/occupation: ",
                 "Business type",
                 2, 100
             );
         }
         else if (employmentStatus == "Salaried (Regular Job)") {
             string employerName = getValidatedString(
-                "Please enter your employer's name: ",
+                Config::CHATBOT_NAME + ": Please enter your employer's name: ",
                 "Employer name",
                 2, 100
             );
@@ -206,14 +213,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
 
         vector<string> maritalOptions = { "Single", "Married", "Divorced", "Widowed" };
         string maritalStatus = getSelectionFromOptions(
-            "Please select your marital status:",
+            Config::CHATBOT_NAME + ": Please select your marital status:",
             maritalOptions
         );
         application.setMaritalStatus(maritalStatus);
 
         vector<string> genderOptions = { "Male", "Female", "Other" };
         string gender = getSelectionFromOptions(
-            "Please select your gender:",
+            Config::CHATBOT_NAME + ": Please select your gender:",
             genderOptions
         );
         application.setGender(gender);
@@ -249,14 +256,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
         if (employmentStatus == "Unemployed") {
             cout << Config::CHATBOT_NAME << ": " << "Since you're unemployed, please enter your household income or other sources of income." << endl;
             annualIncome = getValidatedNumeric(
-                "Annual household/support income (PKR without commas): ",
+                Config::CHATBOT_NAME + ": Annual household/support income (PKR without commas): ",
                 "Annual income",
                 0, 50000000
             );
         }
         else {
             annualIncome = getValidatedNumeric(
-                "Please enter your annual income in PKR (without commas): ",
+                Config::CHATBOT_NAME + ": Please enter your annual income in PKR (without commas): ",
                 "Annual income",
                 100000, 50000000
             );
@@ -271,14 +278,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
         cout << Config::CHATBOT_NAME << ": " << "We need information about your electricity bills for address verification." << endl;
 
         long long avgElectricityBill = getValidatedNumeric(
-            "Average monthly electricity bill for last 12 months (PKR without commas): ",
+            Config::CHATBOT_NAME + ": Average monthly electricity bill for last 12 months (PKR without commas): ",
             "Average electricity bill",
             0, 100000
         );
         application.setAvgElectricityBill(avgElectricityBill);
 
         long long currentElectricityBill = getValidatedNumeric(
-            "Current electricity bill amount (PKR without commas): ",
+            Config::CHATBOT_NAME + ": Current electricity bill amount (PKR without commas): ",
             "Current electricity bill",
             0, 100000
         );
@@ -300,7 +307,7 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
             };
 
             string primaryIncomeSource = getSelectionFromOptions(
-                "Primary source of income:",
+                Config::CHATBOT_NAME + ": Primary source of income:",
                 incomeSourceOptions
             );
         }
@@ -355,14 +362,14 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
                 cout << endl << "--- Existing Loan #" << loanCount << " ---" << endl;
 
                 vector<string> activeOptions = { "Yes, this loan is currently active", "No, this loan is closed" };
-                string activeChoice = getSelectionFromOptions("Is this loan currently active?: ", activeOptions);
+                string activeChoice = getSelectionFromOptions(Config::CHATBOT_NAME + ": Is this loan currently active?: ", activeOptions);
                 loan.isActive = (activeChoice.find("Yes") != string::npos);
 
-                loan.totalAmount = getValidatedNumeric("Total original loan amount (PKR): ", "Total loan amount", 1000, 1000000000);
+                loan.totalAmount = getValidatedNumeric(Config::CHATBOT_NAME + ": Total original loan amount (PKR): ", "Total loan amount", 1000, 1000000000);
 
                 if (loan.isActive) {
-                    loan.amountReturned = getValidatedNumeric("Amount paid back so far (PKR): ", "Amount returned", 0, loan.totalAmount);
-                    loan.amountDue = getValidatedNumeric("Remaining amount to pay (PKR): ", "Amount due", 0, loan.totalAmount);
+                    loan.amountReturned = getValidatedNumeric(Config::CHATBOT_NAME + ": Amount paid back so far (PKR): ", "Amount returned", 0, loan.totalAmount);
+                    loan.amountDue = getValidatedNumeric(Config::CHATBOT_NAME + ": Remaining amount to pay (PKR): ", "Amount due", 0, loan.totalAmount);
 
                     if (loan.amountReturned + loan.amountDue != loan.totalAmount) {
                         cout << Config::CHATBOT_NAME << ": " << "Note: The amounts don't add up correctly." << endl;
@@ -377,10 +384,10 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
                     cout << Config::CHATBOT_NAME << ": " << "Marking as fully paid since loan is closed." << endl;
                 }
 
-                loan.bankName = getValidatedString("Bank or financial institution name: ", "Bank name", 2, 100);
+                loan.bankName = getValidatedString(Config::CHATBOT_NAME + ": Bank or financial institution name: ", "Bank name", 2, 100);
 
                 vector<string> loanCategories = { "Car Loan", "Home Loan", "Personal Loan", "Business Loan", "Education Loan", "Other" };
-                loan.loanCategory = getSelectionFromOptions("Type of loan: ", loanCategories);
+                loan.loanCategory = getSelectionFromOptions(Config::CHATBOT_NAME + ": Type of loan: ", loanCategories);
 
                 if (!loan.validate()) {
                     cout << Config::CHATBOT_NAME << ": " << "Invalid loan information. Please re-enter this loan." << endl;
@@ -426,20 +433,20 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
 
         cout << endl << "--- Reference 1 ---" << endl;
         Reference ref1;
-        ref1.name = getValidatedString("Reference 1 full name: ", "Reference name", 1, 100);
-        ref1.cnic = getValidatedCNIC("Reference 1 CNIC (13 digits without dashes): ");
-        ref1.cnicIssueDate = getValidatedCNICIssueDate("Reference 1 CNIC issue date (DD-MM-YYYY): ");
-        ref1.phoneNumber = getValidatedPhone("Reference 1 phone number: ");
-        ref1.email = getValidatedEmail("Reference 1 email address: ");
+        ref1.name = getValidatedString(Config::CHATBOT_NAME + ": Reference 1 full name: ", "Reference name", 1, 100);
+        ref1.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 1 CNIC (13 digits without dashes): ");
+        ref1.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 1 CNIC issue date (DD-MM-YYYY): ");
+        ref1.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 1 phone number: ");
+        ref1.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 1 email address: ");
         application.setReference1(ref1);
 
         cout << endl << "--- Reference 2 ---" << endl;
         Reference ref2;
-        ref2.name = getValidatedString("Reference 2 full name: ", "Reference name", 1, 100);
-        ref2.cnic = getValidatedCNIC("Reference 2 CNIC (13 digits without dashes): ");
-        ref2.cnicIssueDate = getValidatedCNICIssueDate("Reference 2 CNIC issue date (DD-MM-YYYY): ");
-        ref2.phoneNumber = getValidatedPhone("Reference 2 phone number: ");
-        ref2.email = getValidatedEmail("Reference 2 email address: ");
+        ref2.name = getValidatedString(Config::CHATBOT_NAME + ": Reference 2 full name: ", "Reference name", 1, 100);
+        ref2.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 2 CNIC (13 digits without dashes): ");
+        ref2.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 2 CNIC issue date (DD-MM-YYYY): ");
+        ref2.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 2 phone number: ");
+        ref2.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 2 email address: ");
         application.setReference2(ref2);
 
         cout << Config::CHATBOT_NAME << ": References information collected successfully!" << endl;
@@ -454,7 +461,6 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
         return false;
     }
 }
-
 bool ApplicationCollector::confirmApplication(const LoanApplication& application) {
     cout << endl << "=== APPLICATION SUMMARY ===" << endl;
     cout << "Please review your information:" << endl << endl;
@@ -661,7 +667,6 @@ string ApplicationCollector::getValidatedCNICIssueDate(const string& prompt) {
         }
     }
 }
-
 string ApplicationCollector::getValidatedCNICExpiryDate(const string& prompt) {
     while (true) {
         cout << Config::CHATBOT_NAME << ": " << prompt;
@@ -719,11 +724,11 @@ string ApplicationCollector::getValidatedCNICExpiryDate(const string& prompt) {
                 choice = trim(choice);
 
                 if (choice == "1") {
-                    cout << endl << "Please enter the correct CNIC expiry date:" << endl;
+                    cout << endl << Config::CHATBOT_NAME << ": Please enter the correct CNIC expiry date:" << endl;
                     continue;
                 }
                 else if (choice == "2") {
-                    cout << endl << "Returning to main menu..." << endl;
+                    cout << endl << Config::CHATBOT_NAME << ": Returning to main menu..." << endl;
                     throw ValidationException("User chose to return to main menu due to expired CNIC.");
                 }
                 else {
@@ -934,17 +939,11 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         cout << "========================================" << endl;
         cout << Config::CHATBOT_NAME << ": Please enter the file path for " << imageType << endl;
         cout << endl;
-        cout << "IMPORTANT:" << endl;
+     
         cout << "  • This must be from your ORIGINAL location on your computer" << endl;
-        cout << "  • Do NOT use files from this program's 'images' folder" << endl;
-        cout << endl;
-        cout << "GOOD examples:" << endl;
-        cout << "  C:/Users/YourName/Pictures/photo.jpg" << endl;
-        cout << "  C:/Users/YourName/Downloads/document.jpg" << endl;
-        cout << endl;
-        cout << "BAD examples:" << endl;
-        cout << "  images/1004_photo.jpg" << endl;
-        cout << endl;
+       
+ 
+       
         cout << "File path: ";
 
         string path;
@@ -959,19 +958,15 @@ string ApplicationCollector::getImagePath(const string& imageType) {
             path.find("/images/") != string::npos ||
             path.find("COPY_FAILED") != string::npos) {
 
-            cout << endl << "❌ ERROR: Invalid file location!" << endl;
-            cout << "You selected a file from the 'images' folder or a previously failed copy." << endl;
-            cout << "Please select from these locations:" << endl;
-            cout << "  • C:/Users/YourName/Pictures/" << endl;
-            cout << "  • C:/Users/YourName/Downloads/" << endl;
-            cout << "  • C:/Users/YourName/Desktop/" << endl;
-            cout << endl;
+            cout << endl << " ERROR: Invalid file location!" << endl;
+          
+           
             continue;
         }
 
         ifstream testFile(path, ios::binary | ios::ate);
         if (!testFile.is_open()) {
-            cout << endl << "❌ ERROR: Cannot find file at this location" << endl;
+            cout << endl << " ERROR: Cannot find file at this location" << endl;
             cout << "Path: " << path << endl;
             cout << "Please check the path and try again." << endl;
             cout << endl;
@@ -982,7 +977,7 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         testFile.close();
 
         if (fileSize == 0) {
-            cout << endl << "❌ ERROR: File is empty (0 bytes)" << endl;
+            cout << endl << " ERROR: File is empty (0 bytes)" << endl;
             cout << "Please select a file with content." << endl;
             cout << endl;
             continue;
@@ -1094,4 +1089,40 @@ void ApplicationCollector::collectInstallmentStartDate(LoanApplication& applicat
     application.setInstallmentStartYear(startYear);
 
     cout << "✅ Installment start date set to: " << getMonthName(startMonth) << " " << startYear << endl;
+}
+bool ApplicationCollector::getValidatedYesNo(const string& prompt) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << prompt;
+        string input;
+        getline(cin, input);
+        input = toLower(trim(input));
+
+        if (input == Config::EXIT_COMMAND) {
+            throw ValidationException("User cancelled operation");
+        }
+
+        if (input == "y" || input == "yes") {
+            return true;
+        }
+        else if (input == "n" || input == "no") {
+            return false;
+        }
+        else {
+            // Check if input is a number
+            bool isNumber = true;
+            for (char c : input) {
+                if (!isdigit(static_cast<unsigned char>(c))) {
+                    isNumber = false;
+                    break;
+                }
+            }
+
+            if (isNumber) {
+                cout << Config::CHATBOT_NAME << ": ❌ Invalid input. Please enter 'Y' for Yes or 'N' for No, not numbers." << endl;
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": ❌ Invalid input. Please enter 'Y' for Yes or 'N' for No." << endl;
+            }
+        }
+    }
 }

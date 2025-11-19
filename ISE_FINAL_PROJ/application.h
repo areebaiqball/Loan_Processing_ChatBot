@@ -172,6 +172,9 @@ private:
     string additionalSalarySlipsImagePath;
     string businessDocumentsImagePath;
 
+    // ADD REJECTION REASON FIELD
+    string rejectionReason;
+
 public:
     // Constructors
     LoanApplication();
@@ -209,6 +212,10 @@ public:
     long long getMonthlyPayment() const;
     int getInstallmentStartMonth() const;
     int getInstallmentStartYear() const;
+
+    // ADD REJECTION REASON GETTER/SETTER
+    string getRejectionReason() const;
+    void setRejectionReason(const string& reason);
 
     // Setters
     void setApplicationId(const string& id);
