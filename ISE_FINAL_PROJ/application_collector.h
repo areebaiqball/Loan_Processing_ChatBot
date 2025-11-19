@@ -77,6 +77,24 @@ private:
 
     bool collectImagePaths(LoanApplication& application);
     string getImagePath(const string& imageType);
+    /// <summary>
+   /// Collects reference document images
+   /// </summary>
+    bool collectReferenceDocuments(LoanApplication& application);
+
+    /// <summary>
+    /// Collects additional financial documents
+    /// </summary>
+    bool collectFinancialDocuments(LoanApplication& application);
+    /// <summary>
+   /// Gets validated CNIC issue date - must not be in future
+   /// </summary>
+    string getValidatedCNICIssueDate(const string& prompt);
+
+    /// <summary>
+    /// Gets validated CNIC expiry date - must not be expired
+    /// </summary>
+    string getValidatedCNICExpiryDate(const string& prompt);
 
 public:
     /// <summary>

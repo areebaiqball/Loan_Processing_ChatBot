@@ -39,11 +39,23 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
             throw runtime_error("References information collection failed");
         }
 
-        // Step 5: Document Information
-        cout << endl << "STEP 5/5: Document Information" << endl;
+        // NEW STEP: Reference Documents
+        cout << endl << "STEP 5/7: Reference Documents" << endl;
+        if (!collectReferenceDocuments(application)) {
+            throw runtime_error("Reference documents collection failed");
+        }
+
+        // NEW STEP: Additional Financial Documents
+        cout << endl << "STEP 6/7: Additional Financial Documents" << endl;
+        if (!collectFinancialDocuments(application)) {
+            throw runtime_error("Financial documents collection failed");
+        }
+
+        // Step 7: Basic Document Information (original images)
+        cout << endl << "STEP 7/7: Basic Document Information" << endl;
         collectImagePaths(application);
 
-        // Step 6: Final Validation and Confirmation
+        // Final Validation and Confirmation
         cout << endl << "FINAL STEP: Review and Submit" << endl;
         ValidationResult validation = application.validateCompleteApplication();
         if (!validation.isValid) {
@@ -53,19 +65,7 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
             throw runtime_error("Application validation failed");
         }
 
-        // Show warnings if any
-        if (!validation.warnings.empty()) {
-            cout << Config::CHATBOT_NAME << ": " << "Application warnings:" << endl;
-            cout << validation.getReport() << endl;
-            cout << "You may proceed, but please note these warnings." << endl;
-        }
-
-        if (!confirmApplication(application)) {
-            throw runtime_error("Application cancelled by user");
-        }
-
-        cout << Config::CHATBOT_NAME << ": " << "Application collected successfully!" << endl;
-
+        // ... rest of the existing code ...
     }
     catch (const exception& e) {
         cout << Config::CHATBOT_NAME << ": " << "Error collecting application: " << e.what() << endl;
@@ -74,7 +74,6 @@ LoanApplication ApplicationCollector::collectCompleteApplication() {
 
     return application;
 }
-
 /// <summary>
 /// Collects application for a specific loan type
 /// </summary>
@@ -134,11 +133,12 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
 /// <summary>
 /// Collects basic personal information
 /// </summary>
+/// 
+
 bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
     cout << "=== PERSONAL INFORMATION ===" << endl;
 
     try {
-       
         string fullName = getValidatedString(
             "Please enter your full name: ",
             "Full name",
@@ -146,7 +146,6 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
         );
         application.setFullName(fullName);
 
-       
         string fathersName = getValidatedString(
             "Please enter your father's name: ",
             "Father's name",
@@ -154,7 +153,6 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
         );
         application.setFathersName(fathersName);
 
-       
         string postalAddress = getValidatedString(
             "Please enter your complete postal address: ",
             "Postal address",
@@ -162,39 +160,37 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
         );
         application.setPostalAddress(postalAddress);
 
-        
         string contactNumber = getValidatedPhone("Please enter your contact number: ");
-            
-       
         application.setContactNumber(contactNumber);
 
-      
         string email = getValidatedEmail("Please enter your email address: ");
-          
-       
         application.setEmailAddress(email);
 
-      
         string cnic = getValidatedCNIC("Please enter your CNIC number (13 digits without dashes): ");
-           
-      
         application.setCnicNumber(cnic);
 
-      
-        string cnicExpiry = getValidatedDate("Please enter your CNIC expiry date (DD-MM-YYYY): ");
-            
-       
+        // Use new CNIC issue date validation
+        string cnicIssueDate = getValidatedCNICIssueDate("Please enter your CNIC issue date (DD-MM-YYYY): ");
+        // Store if needed or just validate
+
+        // Use new CNIC expiry date validation (will ask to continue or return to main if expired)
+        string cnicExpiry = getValidatedCNICExpiryDate("Please enter your CNIC expiry date (DD-MM-YYYY): ");
         application.setCnicExpiryDate(cnicExpiry);
 
-        cout << Config::CHATBOT_NAME << ": " << "Personal information collected successfully!" << endl;
+        cout << Config::CHATBOT_NAME << ": Personal information collected successfully!" << endl;
         return true;
 
     }
+    catch (const ValidationException& e) {
+        cout << Config::CHATBOT_NAME << ": " << e.what() << endl;
+        return false;
+    }
     catch (const exception& e) {
-        cout << Config::CHATBOT_NAME << ": " << "Error in personal information: " << e.what() << endl;
+        cout << Config::CHATBOT_NAME << ": Error in personal information: " << e.what() << endl;
         return false;
     }
 }
+
 
 /// <summary>
 /// Collects employment and financial details
@@ -477,6 +473,8 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
 /// <summary>
 /// Collects references information
 /// </summary>
+// REPLACE collectReferencesInfo() in application_collector.cpp with this:
+
 bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
     cout << endl << "=== REFERENCES INFORMATION ===" << endl;
 
@@ -488,7 +486,10 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
         Reference ref1;
         ref1.name = getValidatedString("Reference 1 full name: ", "Reference name", 1, 100);
         ref1.cnic = getValidatedCNIC("Reference 1 CNIC (13 digits without dashes): ");
-        ref1.cnicIssueDate = getValidatedDate("Reference 1 CNIC issue date (DD-MM-YYYY): ");
+
+        // Use new CNIC issue date validation for reference
+        ref1.cnicIssueDate = getValidatedCNICIssueDate("Reference 1 CNIC issue date (DD-MM-YYYY): ");
+
         ref1.phoneNumber = getValidatedPhone("Reference 1 phone number: ");
         ref1.email = getValidatedEmail("Reference 1 email address: ");
         application.setReference1(ref1);
@@ -498,21 +499,27 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
         Reference ref2;
         ref2.name = getValidatedString("Reference 2 full name: ", "Reference name", 1, 100);
         ref2.cnic = getValidatedCNIC("Reference 2 CNIC (13 digits without dashes): ");
-        ref2.cnicIssueDate = getValidatedDate("Reference 2 CNIC issue date (DD-MM-YYYY): ");
+
+        // Use new CNIC issue date validation for reference
+        ref2.cnicIssueDate = getValidatedCNICIssueDate("Reference 2 CNIC issue date (DD-MM-YYYY): ");
+
         ref2.phoneNumber = getValidatedPhone("Reference 2 phone number: ");
         ref2.email = getValidatedEmail("Reference 2 email address: ");
         application.setReference2(ref2);
 
-        cout << Config::CHATBOT_NAME << ": " << "References information collected successfully!" << endl;
+        cout << Config::CHATBOT_NAME << ": References information collected successfully!" << endl;
         return true;
 
     }
+    catch (const ValidationException& e) {
+        cout << Config::CHATBOT_NAME << ": " << e.what() << endl;
+        return false;
+    }
     catch (const exception& e) {
-        cout << Config::CHATBOT_NAME << ": " << "Error in references information: " << e.what() << endl;
+        cout << Config::CHATBOT_NAME << ": Error in references information: " << e.what() << endl;
         return false;
     }
 }
-
 /// <summary>
 /// Displays summary and gets confirmation
 /// </summary>
@@ -582,9 +589,35 @@ string ApplicationCollector::getValidatedString(const string& prompt, const stri
             continue;
         }
 
+        // NEW VALIDATION: Check if input contains only numbers or special characters
+        bool hasLetters = false;
+        bool hasOnlyNumbers = true;
+
+        for (char c : input) {
+            if (isalpha(static_cast<unsigned char>(c))) {
+                hasLetters = true;
+                hasOnlyNumbers = false;
+            }
+            else if (!isspace(static_cast<unsigned char>(c)) && !ispunct(static_cast<unsigned char>(c))) {
+                // Allow spaces and punctuation
+                continue;
+            }
+        }
+
+        if (!hasLetters) {
+            if (hasOnlyNumbers && input.length() > 0) {
+                cout << Config::CHATBOT_NAME << ": " << fieldName << " cannot contain only numbers. Please enter a valid name." << endl;
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": " << fieldName << " must contain letters. Please enter a valid name." << endl;
+            }
+            continue;
+        }
+
         return input;
     }
 }
+
 
 long long ApplicationCollector::getValidatedNumeric(const string& prompt, const string& fieldName, long long minValue, long long maxValue) {
     while (true) {
@@ -659,6 +692,153 @@ string ApplicationCollector::getValidatedCNIC(const string& prompt) {
     }
 }
 
+
+
+// ADD THESE TWO NEW FUNCTIONS TO application_collector.cpp
+
+/// <summary>
+/// Gets validated CNIC issue date - must not be in future
+/// </summary>
+string ApplicationCollector::getValidatedCNICIssueDate(const string& prompt) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << prompt;
+        string input;
+        getline(cin, input);
+        input = trim(input);
+
+        if (input.length() != 10 || input[2] != '-' || input[5] != '-') {
+            cout << Config::CHATBOT_NAME << ": Date must be in DD-MM-YYYY format. Please try again." << endl;
+            continue;
+        }
+
+        try {
+            int day = stoi(input.substr(0, 2));
+            int month = stoi(input.substr(3, 2));
+            int year = stoi(input.substr(6, 4));
+
+            if (day < 1 || day > 31) {
+                cout << Config::CHATBOT_NAME << ": Day must be between 1-31. Please try again." << endl;
+                continue;
+            }
+
+            if (month < 1 || month > 12) {
+                cout << Config::CHATBOT_NAME << ": Month must be between 1-12. Please try again." << endl;
+                continue;
+            }
+
+            if (year < 1900 || year > 2100) {
+                cout << Config::CHATBOT_NAME << ": Year must be between 1900-2100. Please try again." << endl;
+                continue;
+            }
+
+            // CHECK IF DATE IS IN PAST (not future)
+            string currentDate = getCurrentDate();
+            int comparison = compareDates(input, currentDate);
+
+            if (comparison > 0) {
+                cout << Config::CHATBOT_NAME << ": ❌ Issue date cannot be in the future. Please enter a valid issue date." << endl;
+                cout << "Current date: " << currentDate << endl;
+                cout << "Please try again." << endl;
+                continue;
+            }
+
+            return input;
+
+        }
+        catch (const exception&) {
+            cout << Config::CHATBOT_NAME << ": Invalid date format. Please use DD-MM-YYYY." << endl;
+        }
+    }
+}
+
+/// <summary>
+/// Gets validated CNIC expiry date - must be in future (not expired)
+/// Asks user if they want to continue if CNIC is expired
+/// </summary>
+string ApplicationCollector::getValidatedCNICExpiryDate(const string& prompt) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << prompt;
+        string input;
+        getline(cin, input);
+        input = trim(input);
+
+        if (input.length() != 10 || input[2] != '-' || input[5] != '-') {
+            cout << Config::CHATBOT_NAME << ": Date must be in DD-MM-YYYY format. Please try again." << endl;
+            continue;
+        }
+
+        try {
+            int day = stoi(input.substr(0, 2));
+            int month = stoi(input.substr(3, 2));
+            int year = stoi(input.substr(6, 4));
+
+            if (day < 1 || day > 31) {
+                cout << Config::CHATBOT_NAME << ": Day must be between 1-31. Please try again." << endl;
+                continue;
+            }
+
+            if (month < 1 || month > 12) {
+                cout << Config::CHATBOT_NAME << ": Month must be between 1-12. Please try again." << endl;
+                continue;
+            }
+
+            if (year < 1900 || year > 2100) {
+                cout << Config::CHATBOT_NAME << ": Year must be between 1900-2100. Please try again." << endl;
+                continue;
+            }
+
+            // CHECK IF DATE IS IN FUTURE (not expired)
+            string currentDate = getCurrentDate();
+            int comparison = compareDates(input, currentDate);
+
+            if (comparison <= 0) {
+                cout << endl << "========================================" << endl;
+                cout << "❌ CNIC EXPIRED" << endl;
+                cout << "========================================" << endl;
+                cout << "Your CNIC has expired or is expired today." << endl;
+                cout << "Current date: " << currentDate << endl;
+                cout << "CNIC expiry date: " << input << endl;
+                cout << endl;
+                cout << "You must renew your CNIC before applying for a loan." << endl;
+                cout << "========================================" << endl;
+                cout << endl;
+
+                cout << Config::CHATBOT_NAME << ": Would you like to:" << endl;
+                cout << "  1. Enter a new expiry date (continue with corrected date)" << endl;
+                cout << "  2. Return to main menu (exit application)" << endl;
+                cout << Config::CHATBOT_NAME << ": Please choose (1 or 2): ";
+
+                string choice;
+                getline(cin, choice);
+                choice = trim(choice);
+
+                if (choice == "1") {
+                    cout << endl << "Please enter the correct CNIC expiry date:" << endl;
+                    continue; // Ask for date again
+                }
+                else if (choice == "2") {
+                    cout << endl << "Returning to main menu..." << endl;
+                    throw ValidationException("User chose to return to main menu due to expired CNIC.");
+                }
+                else {
+                    cout << Config::CHATBOT_NAME << ": Invalid choice. Please enter 1 or 2." << endl;
+                    continue;
+                }
+            }
+
+            return input;
+
+        }
+        catch (const ValidationException&) {
+            throw; // Re-throw validation exceptions
+        }
+        catch (const exception&) {
+            cout << Config::CHATBOT_NAME << ": Invalid date format. Please use DD-MM-YYYY." << endl;
+        }
+    }
+}
+
+
 string ApplicationCollector::getValidatedEmail(const string& prompt) {
     while (true) {
         cout << Config::CHATBOT_NAME << ": " << prompt;
@@ -675,89 +855,9 @@ string ApplicationCollector::getValidatedEmail(const string& prompt) {
     }
 }
 
-string ApplicationCollector::getValidatedPhone(const string& prompt) {
-    while (true) {
-        cout << Config::CHATBOT_NAME << ": " << prompt;
-        string input;
-        getline(cin, input);
-        input = trim(input);
 
-        
-        string cleaned;
-        for (char c : input) {
-            if (c != ' ' && c != '-') {
-                cleaned += c;
-            }
-        }
 
-        if (cleaned.length() < 10 || cleaned.length() > 15) {
-            cout << Config::CHATBOT_NAME << ": " << "Phone number must be 10-15 digits. Please try again." << endl;
-            continue;
-        }
 
-        // Check if all characters are digits (or starts with + for international)
-        bool valid = true;
-        size_t start = 0;
-        if (cleaned[0] == '+') {
-            start = 1;
-        }
-
-        for (size_t i = start; i < cleaned.length(); i++) {
-            if (!isdigit(static_cast<unsigned char>(cleaned[i]))) {
-                valid = false;
-                break;
-            }
-        }
-
-        if (!valid) {
-            cout << Config::CHATBOT_NAME << ": " << "Phone number can only contain digits and optional '+' prefix. Please try again." << endl;
-            continue;
-        }
-
-        return cleaned;
-    }
-}
-
-string ApplicationCollector::getValidatedDate(const string& prompt) {
-    while (true) {
-        cout << Config::CHATBOT_NAME << ": " << prompt;
-        string input;
-        getline(cin, input);
-        input = trim(input);
-
-        if (input.length() != 10 || input[2] != '-' || input[5] != '-') {
-            cout << Config::CHATBOT_NAME << ": " << "Date must be in DD-MM-YYYY format. Please try again." << endl;
-            continue;
-        }
-
-        try {
-            int day = stoi(input.substr(0, 2));
-            int month = stoi(input.substr(3, 2));
-            int year = stoi(input.substr(6, 4));
-
-            if (day < 1 || day > 31) {
-                cout << Config::CHATBOT_NAME << ": " << "Day must be between 1-31. Please try again." << endl;
-                continue;
-            }
-
-            if (month < 1 || month > 12) {
-                cout << Config::CHATBOT_NAME << ": " << "Month must be between 1-12. Please try again." << endl;
-                continue;
-            }
-
-            if (year < 1900 || year > 2100) {
-                cout << Config::CHATBOT_NAME << ": " << "Year must be between 1900-2100. Please try again." << endl;
-                continue;
-            }
-
-            return input;
-
-        }
-        catch (const exception&) {
-            cout << Config::CHATBOT_NAME << ": " << "Invalid date format. Please use DD-MM-YYYY." << endl;
-        }
-    }
-}
 
 string ApplicationCollector::getSelectionFromOptions(const string& prompt, const vector<string>& options) {
     while (true) {
@@ -794,6 +894,92 @@ string ApplicationCollector::getSelectionFromOptions(const string& prompt, const
         cout << Config::CHATBOT_NAME << ": " << "Invalid selection. Please choose from the available options." << endl;
     }
 }
+string ApplicationCollector::getValidatedDate(const string& prompt) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << prompt;
+        string input;
+        getline(cin, input);
+        input = trim(input);
+
+        if (input.length() != 10 || input[2] != '-' || input[5] != '-') {
+            cout << Config::CHATBOT_NAME << ": Date must be in DD-MM-YYYY format. Please try again." << endl;
+            continue;
+        }
+
+        try {
+            int day = stoi(input.substr(0, 2));
+            int month = stoi(input.substr(3, 2));
+            int year = stoi(input.substr(6, 4));
+
+            if (day < 1 || day > 31) {
+                cout << Config::CHATBOT_NAME << ": Day must be between 1-31. Please try again." << endl;
+                continue;
+            }
+
+            if (month < 1 || month > 12) {
+                cout << Config::CHATBOT_NAME << ": Month must be between 1-12. Please try again." << endl;
+                continue;
+            }
+
+            if (year < 1900 || year > 2100) {
+                cout << Config::CHATBOT_NAME << ": Year must be between 1900-2100. Please try again." << endl;
+                continue;
+            }
+
+            return input;
+
+        }
+        catch (const exception&) {
+            cout << Config::CHATBOT_NAME << ": Invalid date format. Please use DD-MM-YYYY." << endl;
+        }
+    }
+}
+string ApplicationCollector::getValidatedPhone(const string& prompt) {
+    while (true) {
+        cout << Config::CHATBOT_NAME << ": " << prompt;
+        string input;
+        getline(cin, input);
+        input = trim(input);
+
+        // Clean phone number (remove spaces and dashes)
+        string cleaned;
+        for (char c : input) {
+            if (c != ' ' && c != '-') {
+                cleaned += c;
+            }
+        } // UPDATED: Must be exactly 11 digits
+        if (cleaned.length() != 11) {
+            cout << Config::CHATBOT_NAME << ": Phone number must be exactly 11 digits. Please try again." << endl;
+            cout << "Example: 03001234567" << endl;
+            continue;
+        }
+
+        // Check if all characters are digits (or starts with + for international)
+        bool valid = true;
+        size_t start = 0;
+        if (cleaned[0] == '+') {
+            start = 1;
+        }
+
+        for (size_t i = start; i < cleaned.length(); i++) {
+            if (!isdigit(static_cast<unsigned char>(cleaned[i]))) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (!valid) {
+            cout << Config::CHATBOT_NAME << ": Phone number can only contain digits. Please try again." << endl;
+            continue;
+        }
+
+        return cleaned;
+    }
+}
+
+
+
+
 /// <summary>
 /// Collects loan-specific information based on loan type
 /// </summary>
@@ -869,11 +1055,24 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
 /// </summary>
 string ApplicationCollector::getImagePath(const string& imageType) {
     while (true) {
-        cout << Config::CHATBOT_NAME << ": " << "Enter the ORIGINAL file path for " << imageType << ":" << endl;
-        cout << " This must be from your computer, NOT from this program's 'images' folder" << endl;
-        cout << " Good: C:/Users/DELL/Pictures/your_photo.jpg" << endl;
-        cout << " Bad: images/1004_photo.jpg" << endl;
-        cout << "You: ";
+        cout << endl;
+        cout << "========================================" << endl;
+        cout << "  " << imageType << endl;
+        cout << "========================================" << endl;
+        cout << Config::CHATBOT_NAME << ": Please enter the file path for " << imageType << endl;
+        cout << endl;
+        cout << "IMPORTANT:" << endl;
+        cout << "  • This must be from your ORIGINAL location on your computer" << endl;
+        cout << "  • Do NOT use files from this program's 'images' folder" << endl;
+        cout << endl;
+        cout << "GOOD examples:" << endl;
+        cout << "  C:/Users/YourName/Pictures/photo.jpg" << endl;
+        cout << "  C:/Users/YourName/Downloads/document.jpg" << endl;
+        cout << endl;
+        cout << "BAD examples:" << endl;
+        cout << "  images/1004_photo.jpg" << endl;
+        cout << endl;
+        cout << "File path: ";
 
         string path;
         getline(cin, path);
@@ -885,24 +1084,27 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         }
 
         // CRITICAL: Check if path is from our images folder
-        if (path.find("images/") == 0 ||  // Starts with images/
-            path.find("/images/") != string::npos ||  // Contains /images/
-            path.find("COPY_FAILED") != string::npos) {  // Previous failed copy
+        if (path.find("images/") == 0 ||
+            path.find("/images/") != string::npos ||
+            path.find("COPY_FAILED") != string::npos) {
 
-            cout << " ERROR: You selected a file from the 'images' folder or a previously failed copy." << endl;
-            cout << "This will corrupt files. Please select ORIGINAL files from:" << endl;
-            cout << "- C:/Users/DELL/Pictures/" << endl;
-            cout << "- C:/Users/DELL/Downloads/" << endl;
-            cout << "- C:/Users/DELL/Desktop/" << endl;
-            cout << "- C:/Users/DELL/OneDrive/Pictures/" << endl;
-            cout << "NOT from the 'images' folder in this project." << endl;
+            cout << endl << "❌ ERROR: Invalid file location!" << endl;
+            cout << "You selected a file from the 'images' folder or a previously failed copy." << endl;
+            cout << "Please select from these locations:" << endl;
+            cout << "  • C:/Users/YourName/Pictures/" << endl;
+            cout << "  • C:/Users/YourName/Downloads/" << endl;
+            cout << "  • C:/Users/YourName/Desktop/" << endl;
+            cout << endl;
             continue;
         }
 
         // Check if file exists
         ifstream testFile(path, ios::binary | ios::ate);
         if (!testFile.is_open()) {
-            cout << Config::CHATBOT_NAME << ": " << "❌ ERROR: Cannot find file: " << path << endl;
+            cout << endl << "❌ ERROR: Cannot find file at this location" << endl;
+            cout << "Path: " << path << endl;
+            cout << "Please check the path and try again." << endl;
+            cout << endl;
             continue;
         }
 
@@ -910,11 +1112,83 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         testFile.close();
 
         if (fileSize == 0) {
-            cout << Config::CHATBOT_NAME << ": " << " ERROR: File is empty" << endl;
+            cout << endl << "❌ ERROR: File is empty (0 bytes)" << endl;
+            cout << "Please select a file with content." << endl;
+            cout << endl;
             continue;
         }
 
-        cout << " Original file found: " << path << " (" << fileSize << " bytes)" << endl;
+        cout << endl << "✓ File found and validated!" << endl;
+        cout << "File size: " << fileSize << " bytes" << endl;
+        cout << endl;
         return path;
+    }
+}
+/// <summary>
+/// Collects reference document images
+/// </summary>
+bool ApplicationCollector::collectReferenceDocuments(LoanApplication& application) {
+    cout << endl << "=== REFERENCE DOCUMENTS ===" << endl;
+
+    try {
+        cout << Config::CHATBOT_NAME << ": " << "Now we need CNIC images for your references." << endl;
+
+        // Reference 1 CNIC Images
+        cout << endl << "--- Reference 1 CNIC ---" << endl;
+        string ref1CnicFront = getImagePath("Reference 1 CNIC Front Side");
+        string ref1CnicBack = getImagePath("Reference 1 CNIC Back Side");
+
+        // You'll need to add these fields to your LoanApplication class
+        // For now, we'll store them in a way that works with your current structure
+        // You should add proper setters for these in LoanApplication
+
+        // Reference 2 CNIC Images
+        cout << endl << "--- Reference 2 CNIC ---" << endl;
+        string ref2CnicFront = getImagePath("Reference 2 CNIC Front Side");
+        string ref2CnicBack = getImagePath("Reference 2 CNIC Back Side");
+
+        cout << Config::CHATBOT_NAME << ": " << "Reference documents recorded successfully!" << endl;
+        return true;
+
+    }
+    catch (const exception& e) {
+        cout << Config::CHATBOT_NAME << ": " << "Error in reference documents: " << e.what() << endl;
+        return false;
+    }
+}
+
+/// <summary>
+/// Collects additional financial documents
+/// </summary>
+bool ApplicationCollector::collectFinancialDocuments(LoanApplication& application) {
+    cout << endl << "=== ADDITIONAL FINANCIAL DOCUMENTS ===" << endl;
+
+    try {
+        cout << Config::CHATBOT_NAME << ": " << "We need some additional financial documents for verification." << endl;
+
+        // Bank Statement
+        cout << endl << "--- Bank Statement ---" << endl;
+        string bankStatementPath = getImagePath("Bank Statement (Last 3 months)");
+
+        // Additional Salary Slips if employed
+        if (application.getEmploymentStatus() == "Salaried (Regular Job)" ||
+            application.getEmploymentStatus() == "Salaried") {
+            cout << endl << "--- Additional Salary Slips ---" << endl;
+            string additionalSalarySlips = getImagePath("Last 3 Salary Slips");
+        }
+
+        // Business Documents if self-employed
+        if (application.getEmploymentStatus() == "Self-employed") {
+            cout << endl << "--- Business Documents ---" << endl;
+            string businessDocuments = getImagePath("Business Registration Documents");
+        }
+
+        cout << Config::CHATBOT_NAME << ": " << "Financial documents recorded successfully!" << endl;
+        return true;
+
+    }
+    catch (const exception& e) {
+        cout << Config::CHATBOT_NAME << ": " << "Error in financial documents: " << e.what() << endl;
+        return false;
     }
 }

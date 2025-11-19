@@ -51,24 +51,21 @@ bool FileManager::fileExists(const string& filename) const {
     return file.good();
 }
 
-bool FileManager::copyImageFile(const string& sourcePath, const string& destinationPath) const {
-    cout << endl << "=== DEBUG COPY PROCESS ===" << endl;
-    cout << "Source: " << sourcePath << endl;
-    cout << "Destination: " << destinationPath << endl;
+// REPLACE the copyImageFile method in file_manager.cpp
 
+bool FileManager::copyImageFile(const string& sourcePath, const string& destinationPath) const {
     // Verify source file exists and is readable
     ifstream sourceCheck(sourcePath, ios::binary | ios::ate);
     if (!sourceCheck.is_open()) {
-        cerr << " ERROR: Cannot open source file for reading" << endl;
+        cerr << "❌ ERROR: Cannot open source file for reading" << endl;
         return false;
     }
 
     streamsize sourceSize = sourceCheck.tellg();
     sourceCheck.close();
-    cout << "Source file size: " << sourceSize << " bytes" << endl;
 
     if (sourceSize == 0) {
-        cerr << " ERROR: Source file is empty" << endl;
+        cerr << "❌ ERROR: Source file is empty" << endl;
         return false;
     }
 
@@ -87,10 +84,9 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
         return false;
     }
 
-    // Copy with buffer and progress tracking
+    // Copy with buffer (without verbose output)
     const size_t bufferSize = 8192;
     char buffer[bufferSize];
-    streamsize totalCopied = 0;
     bool success = true;
 
     while (source.read(buffer, bufferSize) || source.gcount() > 0) {
@@ -100,8 +96,6 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
             success = false;
             break;
         }
-        totalCopied += bytesRead;
-        cout << "Copied: " << totalCopied << "/" << sourceSize << " bytes" << endl;
     }
 
     // Check for errors
@@ -118,19 +112,14 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
     destination.close();
 
     if (success) {
-        // Verify the copy
+        // Verify the copy silently
         ifstream destCheck(destinationPath, ios::binary | ios::ate);
         if (destCheck.is_open()) {
             streamsize destSize = destCheck.tellg();
             destCheck.close();
-            cout << "Destination file size: " << destSize << " bytes" << endl;
 
-            if (destSize == sourceSize) {
-                cout << "✅ SUCCESS: Copy verified, sizes match!" << endl;
-            }
-            else {
-                cerr << "❌ ERROR: Size mismatch! Source: " << sourceSize
-                    << " Dest: " << destSize << endl;
+            if (destSize != sourceSize) {
+                cerr << "❌ ERROR: File copy incomplete (size mismatch)" << endl;
                 success = false;
             }
         }
@@ -140,7 +129,6 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
         }
     }
 
-    cout << "=== END COPY PROCESS ===" << endl << endl;
     return success;
 }
 

@@ -177,6 +177,15 @@ private:
     void validateReferences(ValidationResult& result) const;
     void validateBusinessRules(ValidationResult& result) const;
 
+    string reference1CnicFrontImagePath;
+    string reference1CnicBackImagePath;
+    string reference2CnicFrontImagePath;
+    string reference2CnicBackImagePath;
+    string bankStatementImagePath;
+    string additionalSalarySlipsImagePath;
+    string businessDocumentsImagePath;
+
+
 public:
     // Constructors
     LoanApplication();
@@ -243,6 +252,23 @@ public:
     void setDownPayment(long long payment);
     void setInstallmentMonths(int months);
     void setMonthlyPayment(long long payment);
+    string getReference1CnicFrontImagePath() const;
+    void setReference1CnicFrontImagePath(const string& path);
+    string getReference1CnicBackImagePath() const;
+    void setReference1CnicBackImagePath(const string& path);
+    string getReference2CnicFrontImagePath() const;
+    void setReference2CnicFrontImagePath(const string& path);
+    string getReference2CnicBackImagePath() const;
+    void setReference2CnicBackImagePath(const string& path);
+    string getBankStatementImagePath() const;
+    void setBankStatementImagePath(const string& path);
+    string getAdditionalSalarySlipsImagePath() const;
+    void setAdditionalSalarySlipsImagePath(const string& path);
+    string getBusinessDocumentsImagePath() const;
+    void setBusinessDocumentsImagePath(const string& path);
+    
+
+
 
     // Existing Loans Management
     void addExistingLoan(const ExistingLoan& loan);

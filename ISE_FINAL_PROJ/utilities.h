@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cctype>
+#include <ctime>
 using namespace std;
 
 /// <summary>
@@ -25,8 +26,6 @@ namespace Config {
 /// <summary>
 /// Trims whitespace from string
 /// </summary>
-/// <param name="str"> input string </param>
-/// <returns> trimmed string </returns>
 inline string trim(const string& str) {
     if (str.empty()) {
         return "";
@@ -35,12 +34,10 @@ inline string trim(const string& str) {
     size_t start = 0;
     size_t end = str.length() - 1;
 
-    // Find first non-whitespace character
     while (start <= end && isspace(static_cast<unsigned char>(str[start]))) {
         start++;
     }
 
-    // Find last non-whitespace character
     while (end >= start && isspace(static_cast<unsigned char>(str[end]))) {
         end--;
     }
@@ -51,8 +48,6 @@ inline string trim(const string& str) {
 /// <summary>
 /// Converts string to lowercase
 /// </summary>
-/// <param name="str">input string</param>
-/// <returns>lowercase string</returns>
 inline string toLower(const string& str) {
     string result = str;
     for (size_t i = 0; i < result.length(); i++) {
@@ -62,11 +57,8 @@ inline string toLower(const string& str) {
 }
 
 /// <summary>
-/// splits string by delimitter
+/// Splits string by delimiter
 /// </summary>
-/// <param name="line">input line</param>
-/// <param name="delimiter">delimmiter character</param>
-/// <returns>vector of tokens</returns>
 inline vector<string> splitString(const string& line, char delimiter) {
     vector<string> tokens;
     string current = "";
@@ -87,11 +79,10 @@ inline vector<string> splitString(const string& line, char delimiter) {
 
     return tokens;
 }
+
 /// <summary>
 /// Removes commas from a numeric string
 /// </summary>
-/// <param name="numStr">String containing digits and commas</param>
-/// <returns>String with commas removed</returns>
 inline string removeCommas(const string& numStr) {
     string result = "";
     for (char ch : numStr) {
@@ -121,6 +112,53 @@ inline void getNextMonth(int& month, int& year) {
         month = 1;
         year++;
     }
+}
+
+/// <summary>
+/// Gets current date as string in DD-MM-YYYY format
+/// </summary>
+inline string getCurrentDate() {
+    time_t now = time(0);
+    struct tm timeinfo = {};
+
+#ifdef _WIN32
+    localtime_s(&timeinfo, &now);
+#else
+    timeinfo = *localtime(&now);
+#endif
+
+    string day = (timeinfo.tm_mday < 10) ? "0" + to_string(timeinfo.tm_mday) : to_string(timeinfo.tm_mday);
+    string month = (timeinfo.tm_mon + 1 < 10) ? "0" + to_string(timeinfo.tm_mon + 1) : to_string(timeinfo.tm_mon + 1);
+    string year = to_string(timeinfo.tm_year + 1900);
+
+    return day + "-" + month + "-" + year;
+}
+
+/// <summary>
+/// Compares two dates in DD-MM-YYYY format
+/// Returns: -1 if date1 < date2, 0 if equal, 1 if date1 > date2
+/// </summary>
+inline int compareDates(const string& date1, const string& date2) {
+    // Extract day, month, year from date1
+    int day1 = stoi(date1.substr(0, 2));
+    int month1 = stoi(date1.substr(3, 2));
+    int year1 = stoi(date1.substr(6, 4));
+
+    // Extract day, month, year from date2
+    int day2 = stoi(date2.substr(0, 2));
+    int month2 = stoi(date2.substr(3, 2));
+    int year2 = stoi(date2.substr(6, 4));
+
+    // Compare years first
+    if (year1 != year2) return year1 < year2 ? -1 : 1;
+
+    // If years are same, compare months
+    if (month1 != month2) return month1 < month2 ? -1 : 1;
+
+    // If months are same, compare days
+    if (day1 != day2) return day1 < day2 ? -1 : 1;
+
+    return 0; // Dates are equal
 }
 
 #endif
