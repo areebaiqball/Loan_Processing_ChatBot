@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <iomanip>
 
-// CarLoan class implementation
 CarLoan::CarLoan() {
     make = "";
     model = "";
@@ -103,7 +102,6 @@ void CarLoan::displayInstallmentPlan() const {
     for (int month = 1; month <= getInstallments(); month++) {
         long long paymentDue = monthlyInstallment;
 
-        // For the last month, adjust payment to clear remaining balance
         if (month == getInstallments()) {
             paymentDue = currentBalance;
         }
@@ -117,7 +115,6 @@ void CarLoan::displayInstallmentPlan() const {
 
     cout << "+-------+----------------+---------------+" << endl << endl;
 
-    // Display summary
     long long totalPayment = getDownPayment() + (monthlyInstallment * getInstallments());
     long long totalInstallments = monthlyInstallment * getInstallments();
 
@@ -127,9 +124,6 @@ void CarLoan::displayInstallmentPlan() const {
     cout << "  Total Installments: PKR " << totalInstallments << endl;
 }
 
-/// <summary>
-/// Loads car loan data from file
-/// </summary>
 int loadCarLoans(CarLoan loans[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -185,9 +179,6 @@ int loadCarLoans(CarLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
-/// <summary>
-/// Displays car loan options
-/// </summary>
 void displayCarLoanOptionsTable(const CarLoan loans[], int size, const string& makeNumber) {
     string makeName = "Make " + makeNumber;
 
@@ -211,9 +202,6 @@ void displayCarLoanOptionsTable(const CarLoan loans[], int size, const string& m
     cout << "+-----+-----------+---------+----------+-------------+---------------+" << endl;
 }
 
-/// <summary>
-/// Displays installment plan for specific car option
-/// </summary>
 bool displayCarInstallmentPlan(const CarLoan loans[], int size, int optionNumber) {
     if (optionNumber < 1 || optionNumber > size) {
         cout << "Invalid option number. Please try again." << endl;

@@ -86,6 +86,7 @@ struct ExistingLoan {
         return true;
     }
 };
+
 /// <summary>
 /// Represents a reference person for the applicant
 /// </summary>
@@ -102,15 +103,11 @@ struct Reference {
         for (char c : cnic) {
             if (!isdigit(static_cast<unsigned char>(c))) return false;
         }
-        // Validate CNIC issue date format (DD-MM-YYYY)
         if (cnicIssueDate.length() != 10 || cnicIssueDate[2] != '-' || cnicIssueDate[5] != '-') {
             return false;
         }
-        // Basic phone validation
         if (phoneNumber.length() < 10 || phoneNumber.length() > 15) return false;
-        // Basic email validation
         if (email.find('@') == string::npos || email.find('.') == string::npos) return false;
-
         return true;
     }
 };
@@ -125,12 +122,14 @@ private:
     string status;
     string submissionDate;
 
-    string loanType;       
-    string loanCategory;    
-    long long loanAmount;   
+    string loanType;
+    string loanCategory;
+    long long loanAmount;
     long long downPayment;
-    int installmentMonths;  
+    int installmentMonths;
     long long monthlyPayment;
+    int installmentStartMonth;
+    int installmentStartYear;
 
     // Personal Information
     string fullName;
@@ -165,18 +164,6 @@ private:
     string electricityBillImagePath;
     string salarySlipImagePath;
 
-    // Private validation methods
-    bool validateCNICWithChecksum(const string& cnic) const;
-    bool validateEmailFormat(const string& email) const;
-    bool validatePakistanPhone(const string& phone) const;
-    bool validateDateLogic(const string& date, const string& fieldName, ValidationResult& result) const;
-    bool validateApplicantAge(const string& cnic, ValidationResult& result) const;
-    void validatePersonalInfo(ValidationResult& result) const;
-    void validateEmploymentAndFinancialInfo(ValidationResult& result) const;
-    void validateExistingLoans(ValidationResult& result) const;
-    void validateReferences(ValidationResult& result) const;
-    void validateBusinessRules(ValidationResult& result) const;
-
     string reference1CnicFrontImagePath;
     string reference1CnicBackImagePath;
     string reference2CnicFrontImagePath;
@@ -184,7 +171,6 @@ private:
     string bankStatementImagePath;
     string additionalSalarySlipsImagePath;
     string businessDocumentsImagePath;
-
 
 public:
     // Constructors
@@ -221,6 +207,8 @@ public:
     long long getDownPayment() const;
     int getInstallmentMonths() const;
     long long getMonthlyPayment() const;
+    int getInstallmentStartMonth() const;
+    int getInstallmentStartYear() const;
 
     // Setters
     void setApplicationId(const string& id);
@@ -252,6 +240,9 @@ public:
     void setDownPayment(long long payment);
     void setInstallmentMonths(int months);
     void setMonthlyPayment(long long payment);
+    void setInstallmentStartMonth(int month);
+    void setInstallmentStartYear(int year);
+
     string getReference1CnicFrontImagePath() const;
     void setReference1CnicFrontImagePath(const string& path);
     string getReference1CnicBackImagePath() const;
@@ -266,16 +257,13 @@ public:
     void setAdditionalSalarySlipsImagePath(const string& path);
     string getBusinessDocumentsImagePath() const;
     void setBusinessDocumentsImagePath(const string& path);
-    
-
-
 
     // Existing Loans Management
     void addExistingLoan(const ExistingLoan& loan);
     void clearExistingLoans();
     int getExistingLoansCount() const;
 
-    //Validation
+    // Validation
     ValidationResult validateCompleteApplication() const;
     ValidationResult validateForLoanType(const string& loanType, long long loanAmount) const;
     bool validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const;
@@ -284,7 +272,6 @@ public:
     ValidationResult validateReferences() const;
     ValidationResult validateEmploymentAndFinancialInfo() const;
     bool validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const;
-    
 };
 
 #endif

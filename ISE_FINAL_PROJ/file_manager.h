@@ -7,72 +7,35 @@
 
 using namespace std;
 
-/// <summary>
-/// Manages file operations for loan applications and images
-/// </summary>
+// SE Principles: Single Responsibility, Encapsulation, Facade Pattern
+
 class FileManager {
 private:
     string applicationsFile;
     string imagesDirectory;
 
-    /// <summary>
-    /// Generates unique application ID
-    /// </summary>
     string generateApplicationId() const;
-
-    /// <summary>
-    /// Checks if file exists
-    /// </summary>
     bool fileExists(const string& filename) const;
-
-    /// <summary>
-    /// Copies image file from source to destination
-    /// </summary>
     bool copyImageFile(const string& sourcePath, const string& destinationPath) const;
 
 public:
-    /// <summary>
-    /// Constructor
-    /// </summary>
     FileManager(const string& appsFile = "applications.txt",
         const string& imagesDir = "images/");
 
-    /// <summary>
-    /// Saves complete application to file system and copies images
-    /// </summary>
+    // Core file operations
     bool saveApplication(LoanApplication& application);
-
-    /// <summary>
-    /// Loads all applications from file
-    /// </summary>
     vector<LoanApplication> loadAllApplications() const;
-
-    /// <summary>
-    /// Finds applications by CNIC
-    /// </summary>
-    vector<LoanApplication> findApplicationsByCNIC(const string& cnic) const;
-
-    /// <summary>
-    /// Gets application statistics by CNIC
-    /// </summary>
-    void getApplicationStatsByCNIC(const string& cnic,
-        int& submitted,
-        int& approved,
-        int& rejected) const;
-
-    /// <summary>
-   /// Updates application status in the file
-   /// </summary>
-    bool updateApplicationStatus(const string& applicationId, const string& newStatus);
-  
-    /// <summary>
-    /// Finds application by ID
-    /// </summary>
     LoanApplication findApplicationById(const string& applicationId) const;
 
-    /// <summary>
-    /// Gets all applications with detailed information
-    /// </summary>
+    // Search and filter operations
+    vector<LoanApplication> findApplicationsByCNIC(const string& cnic) const;
     vector<LoanApplication> loadAllApplicationsDetailed() const;
+
+    // Statistics and status
+    void getApplicationStatsByCNIC(const string& cnic,
+        int& submitted, int& approved, int& rejected) const;
+
+    bool updateApplicationStatus(const string& applicationId, const string& newStatus);
 };
+
 #endif

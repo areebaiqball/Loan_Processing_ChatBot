@@ -7,7 +7,6 @@
 
 using namespace std;
 
-// HomeLoan class implementation
 HomeLoan::HomeLoan() {
     area = "";
     size = "";
@@ -63,9 +62,6 @@ long long HomeLoan::calculateMonthlyInstallment() const {
     return remainingAmount / installments;
 }
 
-/// <summary>
-/// Loads home loan data from file
-/// </summary>
 int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -118,9 +114,6 @@ int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
-/// <summary>
-/// Displays home loan options for area
-/// </summary>
 bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber) {
     string areaName = "Area " + areaNumber;
     bool found = false;
@@ -136,7 +129,7 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
             found = true;
             optionCount++;
             long long monthlyInstallment = loans[i].calculateMonthlyInstallment();
-            cout << "| " << setw(3) << optionCount << " | "  
+            cout << "| " << setw(3) << optionCount << " | "
                 << setw(8) << loans[i].getSize() << " | "
                 << setw(12) << loans[i].getInstallments() << " | "
                 << "PKR " << setw(8) << loans[i].getPrice() << " | "
@@ -154,9 +147,6 @@ bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& area
     return found;
 }
 
-/// <summary>
-/// Displays detailed installment plan for the loan
-/// </summary>
 void HomeLoan::displayInstallmentPlan() const {
     long long monthlyInstallment = calculateMonthlyInstallment();
     long long remainingBalance = getPrice() - getDownPayment();
@@ -205,9 +195,6 @@ void HomeLoan::displayInstallmentPlan() const {
     cout << "  Total Installments: PKR " << totalInstallments << endl;
 }
 
-/// <summary>
-/// Displays installment plan for specific loan option
-/// </summary>
 bool displayInstallmentPlanForOption(const HomeLoan loans[], int size,
     const string& areaNumber, int optionNumber) {
     string areaName = "Area " + areaNumber;

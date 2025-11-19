@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <iomanip>
 
-// ScooterLoan class implementation
 ScooterLoan::ScooterLoan() {
     make = "";
     model = "";
@@ -103,7 +102,6 @@ void ScooterLoan::displayInstallmentPlan() const {
     for (int month = 1; month <= getInstallments(); month++) {
         long long paymentDue = monthlyInstallment;
 
-        // For the last month, adjust payment to clear remaining balance
         if (month == getInstallments()) {
             paymentDue = currentBalance;
         }
@@ -117,7 +115,6 @@ void ScooterLoan::displayInstallmentPlan() const {
 
     cout << "+-------+----------------+---------------+" << endl << endl;
 
-    // Display summary
     long long totalPayment = getDownPayment() + (monthlyInstallment * getInstallments());
     long long totalInstallments = monthlyInstallment * getInstallments();
 
@@ -127,9 +124,6 @@ void ScooterLoan::displayInstallmentPlan() const {
     cout << "  Total Installments: PKR " << totalInstallments << endl;
 }
 
-/// <summary>
-/// Loads scooter loan data from file
-/// </summary>
 int loadScooterLoans(ScooterLoan loans[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -185,9 +179,6 @@ int loadScooterLoans(ScooterLoan loans[], int maxSize, const string& filename) {
     return count;
 }
 
-/// <summary>
-/// Displays scooter loan options in tabular format
-/// </summary>
 bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const string& makeNumber) {
     string makeName = "Make " + makeNumber;
     bool found = false;
@@ -214,7 +205,6 @@ bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const s
 
     cout << "+-----+-----------+------------------+---------------+-------------+---------------+---------------------+" << endl;
 
-    // Display monthly installments in a separate table
     if (found) {
         cout << endl << "Monthly Installments:" << endl;
         cout << "+-----+---------------------+" << endl;
@@ -239,9 +229,7 @@ bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const s
 
     return found;
 }
-/// <summary>
-/// Displays installment plan for specific scooter option
-/// </summary>
+
 bool displayScooterInstallmentPlan(const ScooterLoan loans[], int size, int optionNumber) {
     if (optionNumber < 1 || optionNumber > size) {
         cout << "Invalid option number. Please try again." << endl;

@@ -131,7 +131,6 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
 
     return success;
 }
-
 bool FileManager::saveApplication(LoanApplication& application) {
     ofstream file(applicationsFile, ios::app);
 
@@ -236,7 +235,9 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << application.getLoanAmount() << Config::DELIMITER
             << application.getDownPayment() << Config::DELIMITER
             << application.getInstallmentMonths() << Config::DELIMITER
-            << application.getMonthlyPayment() << Config::DELIMITER;
+            << application.getMonthlyPayment() << Config::DELIMITER
+            << application.getInstallmentStartMonth() << Config::DELIMITER
+            << application.getInstallmentStartYear() << Config::DELIMITER;
 
         // Existing loans
         vector<ExistingLoan> existingLoans = application.getExistingLoans();
@@ -301,7 +302,9 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
 
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
-            if (parts.size() < 23) {
+
+            // 🔥 FIX: Handle both old format (17 fields) and new format (23+ fields)
+            if (parts.size() < 17) {
                 cerr << "Warning: Line " << lineNumber << " has insufficient fields (" << parts.size() << ")" << endl;
                 continue;
             }
@@ -356,6 +359,61 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 cerr << "Warning: Invalid current bill at line " << lineNumber << ": " << parts[16] << endl;
             }
 
+            // 🔥 FIX: Load loan-specific details if available
+            if (parts.size() > 17 && !parts[17].empty()) {
+                app.setLoanType(parts[17]);
+            }
+            else {
+                app.setLoanType("Personal Loan"); // Default
+            }
+
+            if (parts.size() > 18 && !parts[18].empty()) {
+                app.setLoanCategory(parts[18]);
+            }
+            else {
+                app.setLoanCategory("Standard");
+            }
+
+            // Loan amount
+            if (parts.size() > 19 && !parts[19].empty()) {
+                try {
+                    app.setLoanAmount(stoll(parts[19]));
+                }
+                catch (...) {
+                    app.setLoanAmount(0);
+                }
+            }
+
+            // Down payment
+            if (parts.size() > 20 && !parts[20].empty()) {
+                try {
+                    app.setDownPayment(stoll(parts[20]));
+                }
+                catch (...) {
+                    app.setDownPayment(0);
+                }
+            }
+
+            // Installment months
+            if (parts.size() > 21 && !parts[21].empty()) {
+                try {
+                    app.setInstallmentMonths(stoi(parts[21]));
+                }
+                catch (...) {
+                    app.setInstallmentMonths(0);
+                }
+            }
+
+            // Monthly payment
+            if (parts.size() > 22 && !parts[22].empty()) {
+                try {
+                    app.setMonthlyPayment(stoll(parts[22]));
+                }
+                catch (...) {
+                    app.setMonthlyPayment(0);
+                }
+            }
+
             applications.push_back(app);
 
         }
@@ -382,7 +440,7 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
 
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
-            if (parts.size() >= 23) { // Make sure we have all fields
+            if (parts.size() >= 25) {
                 LoanApplication app;
 
                 // Basic application data
@@ -414,7 +472,7 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
                 try { if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16])); }
                 catch (...) {}
 
-                // 🔥 CRITICAL: Load loan-specific details
+                // Loan details
                 if (parts.size() > 17) app.setLoanType(parts[17]);
                 if (parts.size() > 18) app.setLoanCategory(parts[18]);
 
@@ -439,6 +497,18 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
                 try {
                     if (parts.size() > 22 && !parts[22].empty())
                         app.setMonthlyPayment(stoll(parts[22]));
+                }
+                catch (...) {}
+
+                try {
+                    if (parts.size() > 23 && !parts[23].empty())
+                        app.setInstallmentStartMonth(stoi(parts[23]));
+                }
+                catch (...) {}
+
+                try {
+                    if (parts.size() > 24 && !parts[24].empty())
+                        app.setInstallmentStartYear(stoi(parts[24]));
                 }
                 catch (...) {}
 
@@ -533,6 +603,7 @@ LoanApplication FileManager::findApplicationById(const string& applicationId) co
     ifstream file(applicationsFile);
 
     if (!file.is_open()) {
+        cerr << "Error: Could not open applications file for reading" << endl;
         return LoanApplication();
     }
 
@@ -548,6 +619,8 @@ LoanApplication FileManager::findApplicationById(const string& applicationId) co
                 app.setApplicationId(parts[0]);
                 app.setStatus(parts[1]);
                 app.setSubmissionDate(parts[2]);
+
+                // Personal information
                 app.setFullName(parts[3]);
                 app.setFathersName(parts[4]);
                 app.setPostalAddress(parts[5]);
@@ -555,30 +628,133 @@ LoanApplication FileManager::findApplicationById(const string& applicationId) co
                 app.setEmailAddress(parts[7]);
                 app.setCnicNumber(parts[8]);
                 app.setCnicExpiryDate(parts[9]);
+
+                // Employment & Financial
                 app.setEmploymentStatus(parts[10]);
                 app.setMaritalStatus(parts[11]);
                 app.setGender(parts[12]);
-                app.setNumberOfDependents(stoi(parts[13]));
-                app.setAnnualIncome(stoll(parts[14]));
-                app.setAvgElectricityBill(stoll(parts[15]));
-                app.setCurrentElectricityBill(stoll(parts[16]));
-                app.setLoanType(parts[17]);
-                app.setLoanCategory(parts[18]);
-                app.setLoanAmount(stoll(parts[19]));
-                app.setDownPayment(stoll(parts[20]));
-                app.setInstallmentMonths(stoi(parts[21]));
-                app.setMonthlyPayment(stoll(parts[22]));
+
+                // Safe numeric parsing for basic fields
+                try {
+                    if (!parts[13].empty()) app.setNumberOfDependents(stoi(parts[13]));
+                }
+                catch (...) {
+                    cerr << "Warning: Invalid dependents for application " << applicationId << endl;
+                }
+
+                try {
+                    if (!parts[14].empty()) app.setAnnualIncome(stoll(parts[14]));
+                }
+                catch (...) {
+                    cerr << "Warning: Invalid annual income for application " << applicationId << endl;
+                }
+
+                try {
+                    if (!parts[15].empty()) app.setAvgElectricityBill(stoll(parts[15]));
+                }
+                catch (...) {
+                    cerr << "Warning: Invalid avg electricity bill for application " << applicationId << endl;
+                }
+
+                try {
+                    if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16]));
+                }
+                catch (...) {
+                    cerr << "Warning: Invalid current electricity bill for application " << applicationId << endl;
+                }
+
+                // 🔥 CRITICAL FIX: Load loan-specific details
+                if (parts.size() > 17 && !parts[17].empty()) {
+                    app.setLoanType(parts[17]);
+                }
+                else {
+                    app.setLoanType("Unknown");
+                }
+
+                if (parts.size() > 18 && !parts[18].empty()) {
+                    app.setLoanCategory(parts[18]);
+                }
+                else {
+                    app.setLoanCategory("Unknown");
+                }
+
+                // Loan amount
+                if (parts.size() > 19 && !parts[19].empty()) {
+                    try {
+                        app.setLoanAmount(stoll(parts[19]));
+                    }
+                    catch (...) {
+                        cerr << "Warning: Invalid loan amount for application " << applicationId << endl;
+                        app.setLoanAmount(0);
+                    }
+                }
+                else {
+                    app.setLoanAmount(0);
+                }
+
+                // Down payment
+                if (parts.size() > 20 && !parts[20].empty()) {
+                    try {
+                        app.setDownPayment(stoll(parts[20]));
+                    }
+                    catch (...) {
+                        cerr << "Warning: Invalid down payment for application " << applicationId << endl;
+                        app.setDownPayment(0);
+                    }
+                }
+                else {
+                    app.setDownPayment(0);
+                }
+
+                // Installment months
+                if (parts.size() > 21 && !parts[21].empty()) {
+                    try {
+                        app.setInstallmentMonths(stoi(parts[21]));
+                    }
+                    catch (...) {
+                        cerr << "Warning: Invalid installment months for application " << applicationId << endl;
+                        app.setInstallmentMonths(0);
+                    }
+                }
+                else {
+                    app.setInstallmentMonths(0);
+                }
+
+                // Monthly payment
+                if (parts.size() > 22 && !parts[22].empty()) {
+                    try {
+                        app.setMonthlyPayment(stoll(parts[22]));
+                    }
+                    catch (...) {
+                        cerr << "Warning: Invalid monthly payment for application " << applicationId << endl;
+                        app.setMonthlyPayment(0);
+                    }
+                }
+                else {
+                    // Calculate monthly payment if not stored
+                    if (app.getInstallmentMonths() > 0 && app.getLoanAmount() > 0 && app.getDownPayment() > 0) {
+                        long long monthly = (app.getLoanAmount() - app.getDownPayment()) / app.getInstallmentMonths();
+                        app.setMonthlyPayment(monthly);
+                    }
+                    else {
+                        app.setMonthlyPayment(0);
+                    }
+                }
+
+                file.close();
+                return app;
 
             }
             catch (const exception& e) {
                 cerr << "Error parsing application " << applicationId << ": " << e.what() << endl;
+                file.close();
+                return LoanApplication();
             }
-            file.close();
-            return app;
         }
     }
 
     file.close();
+    cerr << "Application " << applicationId << " not found in file" << endl;
     return LoanApplication();
 }
 

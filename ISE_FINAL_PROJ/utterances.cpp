@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 
-// Utterance class implementation
 Utterance::Utterance() {
     input = "";
     response = "";
@@ -20,13 +19,6 @@ string Utterance::getResponse() const { return response; }
 void Utterance::setInput(const string& inp) { input = inp; }
 void Utterance::setResponse(const string& resp) { response = resp; }
 
-/// <summary>
-/// Loads utterances from files
-/// </summary>
-/// <param name="utterances">Array to store utterances</param>
-/// <param name="maxSize">Maximum array size</param>
-/// <param name="filename">File to load from</param>
-/// <returns>No. of utterances loaded</returns>
 int loadUtterances(Utterance utterances[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -63,13 +55,6 @@ int loadUtterances(Utterance utterances[], int maxSize, const string& filename) 
     return count;
 }
 
-/// <summary>
-/// Gets response for user input
-/// </summary>
-/// <param name="utterances">Array of utterances</param>
-/// <param name="size">Array size</param>
-/// <param name="input">User input</param>
-/// <returns>Response string</returns>
 string getResponse(const Utterance utterances[], int size, const string& input) {
     string lowerInput = toLower(trim(input));
 

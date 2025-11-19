@@ -8,10 +8,10 @@
 #include <string>
 
 using namespace std;
-
 /// <summary>
-/// Default constructor 
+/// Default constructor for LoanApplication
 /// </summary>
+
 LoanApplication::LoanApplication() {
     applicationId = "";
     status = "submitted";
@@ -40,6 +40,8 @@ LoanApplication::LoanApplication() {
     downPayment = 0;
     installmentMonths = 0;
     monthlyPayment = 0;
+    installmentStartMonth = 0;
+    installmentStartYear = 0;
 }
 
 // Getters implementation
@@ -73,6 +75,10 @@ long long LoanApplication::getLoanAmount() const { return loanAmount; }
 long long LoanApplication::getDownPayment() const { return downPayment; }
 int LoanApplication::getInstallmentMonths() const { return installmentMonths; }
 long long LoanApplication::getMonthlyPayment() const { return monthlyPayment; }
+int LoanApplication::getInstallmentStartMonth() const { return installmentStartMonth; }
+void LoanApplication::setInstallmentStartMonth(int month) { installmentStartMonth = month; }
+int LoanApplication::getInstallmentStartYear() const { return installmentStartYear; }
+void LoanApplication::setInstallmentStartYear(int year) { installmentStartYear = year; }
 
 // Setters implementation 
 void LoanApplication::setApplicationId(const string& id) {
@@ -260,16 +266,13 @@ void LoanApplication::setDownPayment(long long payment) { downPayment = payment;
 void LoanApplication::setInstallmentMonths(int months) { installmentMonths = months; }
 void LoanApplication::setMonthlyPayment(long long payment) { monthlyPayment = payment; }
 
-/// <summary>
-/// Adds an existing loan to the application
-/// </summary>
 void LoanApplication::addExistingLoan(const ExistingLoan& loan) {
     existingLoans.push_back(loan);
 }
-
 /// <summary>
 /// Clears all existing loans from the application
 /// </summary>
+
 void LoanApplication::clearExistingLoans() {
     existingLoans.clear();
 }
@@ -277,16 +280,21 @@ void LoanApplication::clearExistingLoans() {
 /// <summary>
 /// Gets the count of existing loans
 /// </summary>
+/// <returns>Number of existing loans</returns>
 int LoanApplication::getExistingLoansCount() const {
     return existingLoans.size();
 }
+/// <summary>
+/// Validates existing loans data
+/// </summary>
+/// <returns>Validation result object</returns>
+
 ValidationResult LoanApplication::validateExistingLoans() const {
     ValidationResult result;
 
     for (size_t i = 0; i < existingLoans.size(); i++) {
         const ExistingLoan& loan = existingLoans[i];
 
-        // Validate loan amounts consistency
         if (loan.amountReturned + loan.amountDue != loan.totalAmount) {
             result.addError("Loan " + to_string(i + 1) + ": Amount returned + amount due should equal total amount");
         }
@@ -306,26 +314,33 @@ ValidationResult LoanApplication::validateExistingLoans() const {
 
     return result;
 }
+
+/// <summary>
+/// Validates references data
+/// </summary>
+/// <returns>Validation result object</returns>
 ValidationResult LoanApplication::validateReferences() const {
     ValidationResult result;
 
-  
     if (!reference1.validate()) {
         result.addError("Reference 1: Invalid reference data");
     }
 
-   
     if (!reference2.validate()) {
         result.addError("Reference 2: Invalid reference data");
     }
 
-   
     if (reference1.cnic == reference2.cnic) {
         result.addError("References must be different people (same CNIC detected)");
     }
 
     return result;
 }
+/// <summary>
+/// Validates debt-to-income ratio
+/// </summary>
+/// <param name="result">Validation result to update</param>
+/// <returns>True if ratio is valid, false otherwise</returns>
 bool LoanApplication::validateDebtToIncomeRatio(ValidationResult& result) const {
     if (annualIncome <= 0) {
         result.addError("Annual income must be positive to calculate debt ratio");
@@ -341,22 +356,25 @@ bool LoanApplication::validateDebtToIncomeRatio(ValidationResult& result) const 
 
     double debtRatio = static_cast<double>(totalExistingDebt) / annualIncome;
 
-    if (debtRatio > 0.5) { // 50% debt-to-income ratio threshold
+    if (debtRatio > 0.5) {
         result.addWarning("High debt-to-income ratio: " + to_string(static_cast<int>(debtRatio * 100)) + "%");
         return false;
     }
 
     return true;
 }
+
+/// <summary>
+/// Validates complete application data
+/// </summary>
+/// <returns>Validation result object</returns>
 ValidationResult LoanApplication::validateCompleteApplication() const {
     ValidationResult result;
 
-    // Validate personal information (you can add more specific validations)
     if (fullName.empty()) result.addError("Full name is required");
     if (cnicNumber.empty()) result.addError("CNIC is required");
     if (contactNumber.empty()) result.addError("Contact number is required");
 
-    // Validate existing loans
     ValidationResult loansValidation = validateExistingLoans();
     if (!loansValidation.isValid) {
         for (const auto& error : loansValidation.errors) {
@@ -364,7 +382,6 @@ ValidationResult LoanApplication::validateCompleteApplication() const {
         }
     }
 
-    
     ValidationResult refsValidation = validateReferences();
     if (!refsValidation.isValid) {
         for (const auto& error : refsValidation.errors) {
@@ -372,21 +389,22 @@ ValidationResult LoanApplication::validateCompleteApplication() const {
         }
     }
 
- 
     validateDebtToIncomeRatio(result);
 
     return result;
 }
 
+/// <summary>
+/// Validates employment and financial information
+/// </summary>
+/// <returns>Validation result object</returns>
 ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
     ValidationResult result;
 
-    // Employment status validation
     if (employmentStatus.empty()) {
         result.addError("Employment status is required");
     }
 
-    // Income validation based on employment status
     if (employmentStatus == "Unemployed" && annualIncome > 0) {
         result.addWarning("Applicant is unemployed but has reported income");
     }
@@ -395,7 +413,6 @@ ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
         result.addWarning("Reported income seems low for employment status");
     }
 
-    // Bill validation
     if (avgElectricityBill < 0 || currentElectricityBill < 0) {
         result.addError("Electricity bills cannot be negative");
     }
@@ -404,7 +421,6 @@ ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
         result.addWarning("Current electricity bill is unusually high compared to average");
     }
 
-    // Dependents validation
     if (numberOfDependents < 0) {
         result.addError("Number of dependents cannot be negative");
     }
@@ -415,7 +431,13 @@ ValidationResult LoanApplication::validateEmploymentAndFinancialInfo() const {
 
     return result;
 }
-
+/// <summary>
+/// Validates income for specific loan type
+/// </summary>
+/// <param name="loanType">Type of loan</param>
+/// <param name="loanAmount">Loan amount to validate</param>
+/// <param name="result">Validation result to update</param>
+/// <returns>True if income is sufficient, false otherwise</returns>
 bool LoanApplication::validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const {
     if (annualIncome <= 0) {
         result.addError("Annual income must be positive");
@@ -424,7 +446,6 @@ bool LoanApplication::validateIncomeForLoanType(const string& loanType, long lon
 
     double incomeToLoanRatio = static_cast<double>(loanAmount) / annualIncome;
 
-    // Different thresholds for different loan types
     if (loanType == "home" && incomeToLoanRatio > 5.0) {
         result.addError("Home loan amount cannot exceed 5 times annual income");
         return false;
@@ -438,7 +459,6 @@ bool LoanApplication::validateIncomeForLoanType(const string& loanType, long lon
         return false;
     }
 
-    // Employment status considerations
     if (employmentStatus == "Unemployed" && loanAmount > 500000) {
         result.addError("Loan amount too high for unemployed applicant");
         return false;

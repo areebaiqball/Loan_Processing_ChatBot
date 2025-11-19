@@ -4,9 +4,8 @@
 #include <string>
 using namespace std;
 
-/// <summary>
-/// Represents scooter loan details
-/// </summary>
+// SE Principles: Encapsulation, Single Responsibility
+
 class ScooterLoan {
 private:
     string make;
@@ -19,12 +18,11 @@ private:
     long long downPayment;
 
 public:
-    // Constructor 
     ScooterLoan();
     ScooterLoan(const string& mk, const string& mdl, const string& dist, const string& chargeTime,
         const string& speed, int inst, long long p, long long dp);
 
-    // Getters 
+    // Getters
     string getMake() const;
     string getModel() const;
     string getDistancePerCharge() const;
@@ -49,18 +47,8 @@ public:
     void displayInstallmentPlan() const;
 };
 
-/// <summary>
-/// Loads scooter loan data from file
-/// </summary>
 int loadScooterLoans(ScooterLoan loans[], int maxSize, const string& filename);
-
-/// <summary>
-/// Displays scooter loan options
-/// </summary>
 bool displayScooterLoanOptionsTable(const ScooterLoan loans[], int size, const string& makeNumber);
-/// <summary>
-/// Displays installment plan for specific scooter option
-/// </summary>
 bool displayScooterInstallmentPlan(const ScooterLoan loans[], int size, int optionNumber);
 
 #endif
