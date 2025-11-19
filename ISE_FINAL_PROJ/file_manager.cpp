@@ -295,13 +295,97 @@ bool FileManager::saveApplication(LoanApplication& application) {
         return false;
     }
 }
-
 vector<LoanApplication> FileManager::loadAllApplications() const {
     vector<LoanApplication> applications;
     ifstream file(applicationsFile);
 
     if (!file.is_open()) {
+        cerr << "Warning: Could not open applications file" << endl;
         return applications;
+    }
+
+    string line;
+    int lineNumber = 0;
+
+    while (getline(file, line)) {
+        lineNumber++;
+        if (line.empty()) continue;
+
+        try {
+            vector<string> parts = splitString(line, Config::DELIMITER);
+            if (parts.size() < 23) {
+                cerr << "Warning: Line " << lineNumber << " has insufficient fields (" << parts.size() << ")" << endl;
+                continue;
+            }
+
+            LoanApplication app;
+
+            // Basic application data with validation
+            if (!parts[0].empty()) app.setApplicationId(parts[0]);
+            if (!parts[1].empty()) app.setStatus(parts[1]);
+            if (!parts[2].empty()) app.setSubmissionDate(parts[2]);
+
+            // Personal information
+            if (!parts[3].empty()) app.setFullName(parts[3]);
+            if (!parts[4].empty()) app.setFathersName(parts[4]);
+            if (!parts[5].empty()) app.setPostalAddress(parts[5]);
+            if (!parts[6].empty()) app.setContactNumber(parts[6]);
+            if (!parts[7].empty()) app.setEmailAddress(parts[7]);
+            if (!parts[8].empty()) app.setCnicNumber(parts[8]);
+            if (!parts[9].empty()) app.setCnicExpiryDate(parts[9]);
+
+            // Employment & Financial - WITH ERROR HANDLING
+            if (!parts[10].empty()) app.setEmploymentStatus(parts[10]);
+            if (!parts[11].empty()) app.setMaritalStatus(parts[11]);
+            if (!parts[12].empty()) app.setGender(parts[12]);
+
+            // Safe numeric parsing
+            try {
+                if (!parts[13].empty()) app.setNumberOfDependents(stoi(parts[13]));
+            }
+            catch (...) {
+                cerr << "Warning: Invalid dependents at line " << lineNumber << ": " << parts[13] << endl;
+            }
+
+            try {
+                if (!parts[14].empty()) app.setAnnualIncome(stoll(parts[14]));
+            }
+            catch (...) {
+                cerr << "Warning: Invalid income at line " << lineNumber << ": " << parts[14] << endl;
+            }
+
+            try {
+                if (!parts[15].empty()) app.setAvgElectricityBill(stoll(parts[15]));
+            }
+            catch (...) {
+                cerr << "Warning: Invalid avg bill at line " << lineNumber << ": " << parts[15] << endl;
+            }
+
+            try {
+                if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16]));
+            }
+            catch (...) {
+                cerr << "Warning: Invalid current bill at line " << lineNumber << ": " << parts[16] << endl;
+            }
+
+            applications.push_back(app);
+
+        }
+        catch (const exception& e) {
+            cerr << "Error parsing application at line " << lineNumber << ": " << e.what() << endl;
+            cerr << "Line content: " << line.substr(0, 100) << "..." << endl;
+        }
+    }
+
+    file.close();
+    return applications;
+}
+vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) const {
+    vector<LoanApplication> results;
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        return results;
     }
 
     string line;
@@ -310,7 +394,7 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
 
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
-            if (parts.size() >= 23) {  // Changed from 25 to 23 (minimum fields before existing loans)
+            if (parts.size() >= 23) { // Make sure we have all fields
                 LoanApplication app;
 
                 // Basic application data
@@ -331,20 +415,48 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
                 app.setEmploymentStatus(parts[10]);
                 app.setMaritalStatus(parts[11]);
                 app.setGender(parts[12]);
-                app.setNumberOfDependents(stoi(parts[13]));
-                app.setAnnualIncome(stoll(parts[14]));
-                app.setAvgElectricityBill(stoll(parts[15]));
-                app.setCurrentElectricityBill(stoll(parts[16]));
 
-                // Loan details
-                app.setLoanType(parts[17]);
-                app.setLoanCategory(parts[18]);
-                app.setLoanAmount(stoll(parts[19]));
-                app.setDownPayment(stoll(parts[20]));
-                app.setInstallmentMonths(stoi(parts[21]));
-                app.setMonthlyPayment(stoll(parts[22]));
+                // Safe numeric parsing
+                try { if (!parts[13].empty()) app.setNumberOfDependents(stoi(parts[13])); }
+                catch (...) {}
+                try { if (!parts[14].empty()) app.setAnnualIncome(stoll(parts[14])); }
+                catch (...) {}
+                try { if (!parts[15].empty()) app.setAvgElectricityBill(stoll(parts[15])); }
+                catch (...) {}
+                try { if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16])); }
+                catch (...) {}
 
-                applications.push_back(app);
+                // 🔥 CRITICAL: Load loan-specific details
+                if (parts.size() > 17) app.setLoanType(parts[17]);
+                if (parts.size() > 18) app.setLoanCategory(parts[18]);
+
+                try {
+                    if (parts.size() > 19 && !parts[19].empty())
+                        app.setLoanAmount(stoll(parts[19]));
+                }
+                catch (...) {}
+
+                try {
+                    if (parts.size() > 20 && !parts[20].empty())
+                        app.setDownPayment(stoll(parts[20]));
+                }
+                catch (...) {}
+
+                try {
+                    if (parts.size() > 21 && !parts[21].empty())
+                        app.setInstallmentMonths(stoi(parts[21]));
+                }
+                catch (...) {}
+
+                try {
+                    if (parts.size() > 22 && !parts[22].empty())
+                        app.setMonthlyPayment(stoll(parts[22]));
+                }
+                catch (...) {}
+
+                if (app.getCnicNumber() == cnic) {
+                    results.push_back(app);
+                }
             }
         }
         catch (const exception& e) {
@@ -353,31 +465,22 @@ vector<LoanApplication> FileManager::loadAllApplications() const {
     }
 
     file.close();
-    return applications;
-}
-
-vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) const {
-    vector<LoanApplication> results;
-    auto allApplications = loadAllApplications();
-
-    for (size_t i = 0; i < allApplications.size(); i++) {
-        if (allApplications[i].getCnicNumber() == cnic) {
-            results.push_back(allApplications[i]);
-        }
-    }
-
     return results;
 }
-
 void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, int& approved, int& rejected) const {
     submitted = approved = rejected = 0;
- 
-    auto applications = findApplicationsByCNIC(cnic);
+
+    auto applications = loadAllApplications();
     for (size_t i = 0; i < applications.size(); i++) {
-        string status = applications[i].getStatus();
-        if (status == "submitted") submitted++;
-        else if (status == "approved") approved++;
-        else if (status == "rejected") rejected++;
+        // Skip applications with empty CNIC or parsing errors
+        if (applications[i].getCnicNumber().empty()) continue;
+
+        if (applications[i].getCnicNumber() == cnic) {
+            string status = applications[i].getStatus();
+            if (status == "submitted") submitted++;
+            else if (status == "approved") approved++;
+            else if (status == "rejected") rejected++;
+        }
     }
 }
 
