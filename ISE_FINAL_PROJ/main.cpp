@@ -849,7 +849,7 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
     cout << "  - Type 'X' to exit" << endl;
 
     while (running) {
-        cout << endl << Config::CHATBOT_NAME << ": ";
+        cout << endl << "You: ";
         getline(cin, userInput);
         string lowerInput = toLower(trim(userInput));
 
@@ -893,6 +893,8 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
             }
             else {
                 cout << Config::CHATBOT_NAME << ": Invalid selection." << endl;
+                displayLoanCategories();
+                continue;
             }
         }
         else {

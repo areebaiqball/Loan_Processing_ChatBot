@@ -130,38 +130,38 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
 
     try {
         string fullName = getValidatedString(
-            Config::CHATBOT_NAME + ": Please enter your full name: ",
+            "Please enter your full name: ",  
             "Full name",
             1, 100
         );
         application.setFullName(fullName);
 
         string fathersName = getValidatedString(
-            Config::CHATBOT_NAME + ": Please enter your father's name: ",
+            "Please enter your father's name: ",  
             "Father's name",
             1, 100
         );
         application.setFathersName(fathersName);
 
         string postalAddress = getValidatedString(
-            Config::CHATBOT_NAME + ": Please enter your complete postal address: ",
+            "Please enter your complete postal address: ",  
             "Postal address",
             1, 255
         );
         application.setPostalAddress(postalAddress);
 
-        string contactNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Please enter your contact number: ");
+        string contactNumber = getValidatedPhone("Please enter your contact number: "); 
         application.setContactNumber(contactNumber);
 
-        string email = getValidatedEmail(Config::CHATBOT_NAME + ": Please enter your email address: ");
+        string email = getValidatedEmail("Please enter your email address: ");  
         application.setEmailAddress(email);
 
-        string cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Please enter your CNIC number (13 digits without dashes): ");
+        string cnic = getValidatedCNIC("Please enter your CNIC number (13 digits without dashes): ");  
         application.setCnicNumber(cnic);
 
-        string cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Please enter your CNIC issue date (DD-MM-YYYY): ");
+        string cnicIssueDate = getValidatedCNICIssueDate("Please enter your CNIC issue date (DD-MM-YYYY): ");  
 
-        string cnicExpiry = getValidatedCNICExpiryDate(Config::CHATBOT_NAME + ": Please enter your CNIC expiry date (DD-MM-YYYY): ");
+        string cnicExpiry = getValidatedCNICExpiryDate("Please enter your CNIC expiry date (DD-MM-YYYY): ");  
         application.setCnicExpiryDate(cnicExpiry);
 
         cout << Config::CHATBOT_NAME << ": Personal information collected successfully!" << endl;
@@ -176,6 +176,7 @@ bool ApplicationCollector::collectPersonalInfo(LoanApplication& application) {
         return false;
     }
 }
+
 bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& application) {
     cout << endl << "=== EMPLOYMENT & FINANCIAL INFORMATION ===" << endl;
 
@@ -189,7 +190,7 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
             "Unemployed"
         };
         string employmentStatus = getSelectionFromOptions(
-            Config::CHATBOT_NAME + ": Please select your current employment status:",
+            "Please select your current employment status:",  
             employmentOptions
         );
         application.setEmploymentStatus(employmentStatus);
@@ -362,10 +363,10 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
                 cout << endl << "--- Existing Loan #" << loanCount << " ---" << endl;
 
                 vector<string> activeOptions = { "Yes, this loan is currently active", "No, this loan is closed" };
-                string activeChoice = getSelectionFromOptions(Config::CHATBOT_NAME + ": Is this loan currently active?: ", activeOptions);
+                string activeChoice = getSelectionFromOptions("Is this loan currently active?: ", activeOptions);  
                 loan.isActive = (activeChoice.find("Yes") != string::npos);
 
-                loan.totalAmount = getValidatedNumeric(Config::CHATBOT_NAME + ": Total original loan amount (PKR): ", "Total loan amount", 1000, 1000000000);
+                loan.totalAmount = getValidatedNumeric("Total original loan amount (PKR): ", "Total loan amount", 1000, 1000000000);  
 
                 if (loan.isActive) {
                     loan.amountReturned = getValidatedNumeric(Config::CHATBOT_NAME + ": Amount paid back so far (PKR): ", "Amount returned", 0, loan.totalAmount);
@@ -433,7 +434,7 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
 
         cout << endl << "--- Reference 1 ---" << endl;
         Reference ref1;
-        ref1.name = getValidatedString(Config::CHATBOT_NAME + ": Reference 1 full name: ", "Reference name", 1, 100);
+        ref1.name = getValidatedString("Reference 1 full name: ", "Reference name", 1, 100); 
         ref1.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 1 CNIC (13 digits without dashes): ");
         ref1.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 1 CNIC issue date (DD-MM-YYYY): ");
         ref1.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 1 phone number: ");
