@@ -36,7 +36,6 @@ private:
     bool getValidatedYesNo(const string& prompt);
 
 public:
-    LoanApplication collectCompleteApplication();
     LoanApplication collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager);
     void collectLoanSpecificInfo(LoanApplication& application, const string& loanType, const string& loanDetails);
 };

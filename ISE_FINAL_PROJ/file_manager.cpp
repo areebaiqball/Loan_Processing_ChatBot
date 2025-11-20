@@ -150,15 +150,6 @@ bool FileManager::saveApplication(LoanApplication& application) {
             application.getSalarySlipImagePath()
         };
 
-        for (const auto& sourcePath : sourcePaths) {
-            if (sourcePath.find("images/") != string::npos ||
-                sourcePath.find("images\\") != string::npos ||
-                sourcePath.find("COPY_FAILED") != string::npos) {
-                cerr << "Error: Cannot use files from images folder as source" << endl;
-                file.close();
-                return false;
-            }
-        }
 
         if (application.getStatus().empty()) {
             application.setStatus("submitted");

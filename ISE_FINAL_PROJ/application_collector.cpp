@@ -3,65 +3,6 @@
 #include <sstream>
 #include<fstream>
 
-LoanApplication ApplicationCollector::collectCompleteApplication() {
-    LoanApplication application;
-
-    cout << endl << Config::CHATBOT_NAME << ": " << "Starting loan application process..." << endl;
-    cout << "I'll need to collect some information from you." << endl << endl;
-
-    try {
-        string currentDate = getCurrentDate();
-        application.setSubmissionDate(currentDate);
-
-        cout << "STEP 1/5: Personal Information" << endl;
-        if (!collectPersonalInfo(application)) {
-            throw runtime_error("Personal information collection failed");
-        }
-
-        cout << endl << "STEP 2/5: Employment & Financial Information" << endl;
-        if (!collectEmploymentAndFinancialInfo(application)) {
-            throw runtime_error("Employment and financial information collection failed");
-        }
-
-        cout << endl << "STEP 3/5: Existing Loans" << endl;
-        if (!collectExistingLoansInfo(application)) {
-            throw runtime_error("Existing loans information collection failed");
-        }
-
-        cout << endl << "STEP 4/5: References" << endl;
-        if (!collectReferencesInfo(application)) {
-            throw runtime_error("References information collection failed");
-        }
-
-        cout << endl << "STEP 5/7: Reference Documents" << endl;
-        if (!collectReferenceDocuments(application)) {
-            throw runtime_error("Reference documents collection failed");
-        }
-
-        cout << endl << "STEP 6/7: Additional Financial Documents" << endl;
-        if (!collectFinancialDocuments(application)) {
-            throw runtime_error("Financial documents collection failed");
-        }
-
-        cout << endl << "STEP 7/7: Basic Document Information" << endl;
-        collectImagePaths(application);
-
-        cout << endl << "FINAL STEP: Review and Submit" << endl;
-        ValidationResult validation = application.validateCompleteApplication();
-        if (!validation.isValid) {
-            cout << Config::CHATBOT_NAME << ": " << "Application validation failed:" << endl;
-            cout << validation.getReport() << endl;
-            cout << "Please correct the errors and try again." << endl;
-            throw runtime_error("Application validation failed");
-        }
-    }
-    catch (const exception& e) {
-        cout << Config::CHATBOT_NAME << ": " << "Error collecting application: " << e.what() << endl;
-        throw;
-    }
-
-    return application;
-}
 LoanApplication ApplicationCollector::collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager) {
     cout << Config::CHATBOT_NAME << ": " << "Starting " << loanType << " loan application process..." << endl;
     cout << "Loan Type: " << loanDetails << endl << endl;
@@ -99,9 +40,6 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
         if (!collectImagePaths(application)) {
             throw runtime_error("Document information collection failed");
         }
-
-        cout << endl << "STEP 6.5/7: Installment Payment Start Date" << endl;
-        collectInstallmentStartDate(application);
 
         // Step 7: Confirmation
         if (!confirmApplication(application)) {
@@ -182,7 +120,7 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
 
         vector<string> employmentOptions = {
             "Self-employed",
-            "Salaried (Regular Job)",
+            "Salaried",
             "Retired",
             "Unemployed"
         };
@@ -194,14 +132,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
 
         if (employmentStatus == "Self-employed") {
             string businessType = getValidatedString(
-                Config::CHATBOT_NAME + ": Please describe your business/occupation: ",
+                "Please describe your business/occupation: ",
                 "Business type",
                 2, 100
             );
         }
-        else if (employmentStatus == "Salaried (Regular Job)") {
+        else if (employmentStatus == "Salaried") {
             string employerName = getValidatedString(
-                Config::CHATBOT_NAME + ": Please enter your employer's name: ",
+               "Please enter your employer's name: ",
                 "Employer name",
                 2, 100
             );
@@ -211,14 +149,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
 
         vector<string> maritalOptions = { "Single", "Married", "Divorced", "Widowed" };
         string maritalStatus = getSelectionFromOptions(
-            Config::CHATBOT_NAME + ": Please select your marital status:",
+            "Please select your marital status:",
             maritalOptions
         );
         application.setMaritalStatus(maritalStatus);
 
         vector<string> genderOptions = { "Male", "Female", "Other" };
         string gender = getSelectionFromOptions(
-            Config::CHATBOT_NAME + ": Please select your gender:",
+            "Please select your gender:",
             genderOptions
         );
         application.setGender(gender);
@@ -254,14 +192,14 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
         if (employmentStatus == "Unemployed") {
             cout << Config::CHATBOT_NAME << ": " << "Since you're unemployed, please enter your household income or other sources of income." << endl;
             annualIncome = getValidatedNumeric(
-                Config::CHATBOT_NAME + ": Annual household/support income (PKR without commas): ",
+               "Annual household/support income (PKR without commas): ",
                 "Annual income",
                 0, 50000000
             );
         }
         else {
             annualIncome = getValidatedNumeric(
-                Config::CHATBOT_NAME + ": Please enter your annual income in PKR (without commas): ",
+              "Please enter your annual income in PKR (without commas): ",
                 "Annual income",
                 100000, 50000000
             );
@@ -283,7 +221,7 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
         application.setAvgElectricityBill(avgElectricityBill);
 
         long long currentElectricityBill = getValidatedNumeric(
-            Config::CHATBOT_NAME + ": Current electricity bill amount (PKR without commas): ",
+            "Current electricity bill amount(PKR without commas) : ",
             "Current electricity bill",
             0, 100000
         );
@@ -305,7 +243,7 @@ bool ApplicationCollector::collectEmploymentAndFinancialInfo(LoanApplication& ap
             };
 
             string primaryIncomeSource = getSelectionFromOptions(
-                Config::CHATBOT_NAME + ": Primary source of income:",
+               "Primary source of income : ",
                 incomeSourceOptions
             );
         }
@@ -950,16 +888,6 @@ string ApplicationCollector::getImagePath(const string& imageType) {
 
         for (char& c : path) {
             if (c == '\\') c = '/';
-        }
-
-        if (path.find("images/") == 0 ||
-            path.find("/images/") != string::npos ||
-            path.find("COPY_FAILED") != string::npos) {
-
-            cout << endl << " ERROR: Invalid file location!" << endl;
-          
-           
-            continue;
         }
 
         ifstream testFile(path, ios::binary | ios::ate);

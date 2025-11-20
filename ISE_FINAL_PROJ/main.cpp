@@ -419,7 +419,7 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
             }
 
             try {
-                LoanApplication application = collector.collectCompleteApplication();
+                LoanApplication application = collector.collectApplicationForLoan("home", "Home Loan", fileManager);
 
                 application.setLoanType("Home Loan");
                 application.setLoanCategory("Area " + areaInput + " - Option " + to_string(optionNumber));
