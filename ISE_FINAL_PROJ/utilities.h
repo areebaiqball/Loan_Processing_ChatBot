@@ -11,18 +11,20 @@ using namespace std;
 /// <summary>
 /// Configuration constants for the loan processing system
 /// </summary>
+// SE Principles: Namespace organization, Configuration management
 namespace Config {
-    extern const string CHATBOT_NAME;
-    extern const string UTTERANCES_FILE;
-    extern const string HOME_LOANS_FILE;
-    extern const int MAX_UTTERANCES;
-    extern const int MAX_LOANS;
-    extern const char DELIMITER;
-    extern const string EXIT_COMMAND;
-    extern const string APPLICATIONS_FILE;
-    extern const string IMAGES_DIRECTORY;
+    const string CHATBOT_NAME = "Dora";
+    const string UTTERANCES_FILE = "Utterances.txt";
+    const string HOME_LOANS_FILE = "Home.txt";
+    const string CAR_LOANS_FILE = "Car.txt";
+    const string SCOOTER_LOANS_FILE = "Scooter.txt";
+    const int MAX_UTTERANCES = 100;
+    const int MAX_LOANS = 100;
+    const char DELIMITER = '#';
+    const string EXIT_COMMAND = "x";
+    const string APPLICATIONS_FILE = "applications.txt";
+    const string IMAGES_DIRECTORY = "images/";
 }
-
 // String Processing Utilities
 
 /// <summary>

@@ -33,6 +33,18 @@
     <ClCompile Include="file_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="car.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="scooter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="network_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lender_server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="home.h">
@@ -50,5 +62,28 @@
     <ClInclude Include="file_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="car.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scooter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="network_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ui_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="run_lender.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="run_user.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="run_both.bat">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

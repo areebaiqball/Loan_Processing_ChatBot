@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36414.22 d17.14
+VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ISE_FINAL_PROJ", "ISE_FINAL_PROJ\ISE_FINAL_PROJ.vcxproj", "{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}"
 EndProject
@@ -9,18 +9,30 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		LenderServer|x64 = LenderServer|x64
+		LenderServer|x86 = LenderServer|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
+		UserClient|x64 = UserClient|x64
+		UserClient|x86 = UserClient|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Debug|x64.ActiveCfg = Debug|x64
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Debug|x64.Build.0 = Debug|x64
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Debug|x86.ActiveCfg = Debug|Win32
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Debug|x86.Build.0 = Debug|Win32
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.LenderServer|x64.ActiveCfg = LenderServer|x64
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.LenderServer|x64.Build.0 = LenderServer|x64
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.LenderServer|x86.ActiveCfg = LenderServer|Win32
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.LenderServer|x86.Build.0 = LenderServer|Win32
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Release|x64.ActiveCfg = Release|x64
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Release|x64.Build.0 = Release|x64
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Release|x86.ActiveCfg = Release|Win32
 		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.Release|x86.Build.0 = Release|Win32
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.UserClient|x64.ActiveCfg = UserClient|x64
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.UserClient|x64.Build.0 = UserClient|x64
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.UserClient|x86.ActiveCfg = UserClient|Win32
+		{C60339B4-EB6C-4D16-BA05-B55AC0C79DED}.UserClient|x86.Build.0 = UserClient|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
