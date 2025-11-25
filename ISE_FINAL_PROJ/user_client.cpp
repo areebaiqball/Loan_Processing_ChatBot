@@ -1,5 +1,4 @@
-﻿#pragma once
-#include <iostream>
+﻿#include <iostream>
 #include <string>
 #include<iomanip>
 #include "utilities.h"
@@ -11,6 +10,7 @@
 #include "file_manager.h"
 #include "utterances.h"
 #include "ui_handler.h"
+#include "multi_session_collector.h"
 
 using namespace std;
 // SE Principles: Namespace organization, Configuration management
@@ -18,9 +18,6 @@ using namespace std;
 
 
 // Forward declarations
-void handleUserMode(const HomeLoan[], int, const CarLoan[], int,
-    const ScooterLoan[], int, const Utterance[], int,
-    ApplicationCollector&, FileManager&);
 void handleHomeLoanSelection(const HomeLoan[], int, bool&, ApplicationCollector&, FileManager&);
 void handleCarLoanSelection(const CarLoan[], int, bool&, ApplicationCollector&, FileManager&);
 void handleScooterLoanSelection(const ScooterLoan[], int, bool&, ApplicationCollector&, FileManager&);
@@ -37,66 +34,8 @@ void displayLoanCategories() {
     cout << "  X - Exit" << endl;
 }
 
-void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
-    const CarLoan carLoans[], int carLoanCount,
-    const ScooterLoan scooterLoans[], int scooterLoanCount,
-    const Utterance utterances[], int utteranceCount,
-    ApplicationCollector& collector, FileManager& fileManager) {
 
-    bool running = true;
-    string userInput;
 
-    cout << endl << Config::CHATBOT_NAME << ": Hello! I'm your loan assistant." << endl;
-    cout << "Options:" << endl;
-    cout << "  - Type 'A' to apply for a loan" << endl;
-    cout << "  - Type 'check my applications' to view status" << endl;
-    cout << "  - Type 'X' to exit" << endl;
-
-    while (running) {
-        cout << endl << "You: ";
-        getline(cin, userInput);
-        string lowerInput = toLower(trim(userInput));
-
-        if (lowerInput == "x" || lowerInput == "exit") {
-            cout << Config::CHATBOT_NAME << ": Goodbye!" << endl;
-            break;
-        }
-
-        if (lowerInput.find("check") != string::npos &&
-            lowerInput.find("application") != string::npos) {
-            checkApplicationStatusByCNIC(fileManager);
-            continue;
-        }
-
-        if (lowerInput == "a" || lowerInput == "apply") {
-            displayLoanCategories();
-            cout << "You: ";
-            getline(cin, userInput);
-            lowerInput = toLower(trim(userInput));
-
-            if (lowerInput == "x") break;
-
-            if (lowerInput == "h") {
-                handleHomeLoanSelection(homeLoans, homeLoanCount, running, collector, fileManager);
-            }
-            else if (lowerInput == "c") {
-                handleCarLoanSelection(carLoans, carLoanCount, running, collector, fileManager);
-            }
-            else if (lowerInput == "s") {
-                handleScooterLoanSelection(scooterLoans, scooterLoanCount, running, collector, fileManager);
-            }
-            else if (lowerInput == "p") {
-                handlePersonalLoanSelection(running, collector, fileManager);
-            }
-            else {
-                cout << Config::CHATBOT_NAME << ": Invalid selection." << endl;
-            }
-        }
-        else {
-            cout << Config::CHATBOT_NAME << ": " << getResponse(utterances, utteranceCount, userInput) << endl;
-        }
-    }
-}
 // SE Principles: Strategy Pattern, Composition, Separation of Concerns
 void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& running,
     ApplicationCollector& collector, FileManager& fileManager) {
@@ -257,6 +196,55 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
             running = false;
         }
         return;
+    }
+}
+void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
+    const CarLoan carLoans[], int carLoanCount,
+    const ScooterLoan scooterLoans[], int scooterLoanCount,
+    const Utterance utterances[], int utteranceCount,
+    ApplicationCollector& collector, FileManager& fileManager) {
+
+    MultiSessionCollector multiSessionCollector(fileManager);
+    bool running = true;
+    string userInput;
+
+    cout << endl << Config::CHATBOT_NAME << ": Hello! I'm your loan assistant." << endl;
+    cout << "I can help you with new loan applications or resume incomplete ones." << endl;
+
+    while (running) {
+        multiSessionCollector.showApplicationMenu();
+        cout << "You: ";
+        getline(cin, userInput);
+        string lowerInput = toLower(trim(userInput));
+
+        if (lowerInput == "1" || lowerInput == "start new" || lowerInput == "new") {
+            multiSessionCollector.startNewApplication(); // REMOVED THE PARAMETERS
+        }
+        else if (lowerInput == "2" || lowerInput == "resume" || lowerInput == "continue") {
+            multiSessionCollector.resumeExistingApplication();
+        }
+        else if (lowerInput == "3" || lowerInput == "check" || lowerInput == "status") {
+            checkApplicationStatusByCNIC(fileManager);
+        }
+        else if (lowerInput == "4" || lowerInput == "exit" || lowerInput == "x") {
+            cout << Config::CHATBOT_NAME << ": Thank you for using our service. Goodbye!" << endl;
+            running = false;
+        }
+        else {
+            // Handle natural language inputs
+            if (lowerInput.find("new") != string::npos || lowerInput.find("apply") != string::npos) {
+                multiSessionCollector.startNewApplication(); // REMOVED THE PARAMETERS
+            }
+            else if (lowerInput.find("resume") != string::npos || lowerInput.find("continue") != string::npos) {
+                multiSessionCollector.resumeExistingApplication();
+            }
+            else if (lowerInput.find("status") != string::npos || lowerInput.find("check") != string::npos) {
+                checkApplicationStatusByCNIC(fileManager);
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": " << getResponse(utterances, utteranceCount, userInput) << endl;
+            }
+        }
     }
 }
 void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
@@ -749,29 +737,28 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
 
 
 
-
-int main() {
-    // Initialize data
-    Utterance utterances[Config::MAX_UTTERANCES];
-    HomeLoan homeLoans[Config::MAX_LOANS];
-    CarLoan carLoans[Config::MAX_LOANS];
-    ScooterLoan scooterLoans[Config::MAX_LOANS];
-    FileManager fileManager;
-    ApplicationCollector collector;
-
-    int utteranceCount = loadUtterances(utterances, Config::MAX_UTTERANCES, Config::UTTERANCES_FILE);
-    int homeLoanCount = loadHomeLoans(homeLoans, Config::MAX_LOANS, Config::HOME_LOANS_FILE);
-    int carLoanCount = loadCarLoans(carLoans, Config::MAX_LOANS, Config::CAR_LOANS_FILE);
-    int scooterLoanCount = loadScooterLoans(scooterLoans, Config::MAX_LOANS, Config::SCOOTER_LOANS_FILE);
-
-    cout << "╔════════════════════════════════════╗" << endl;
-    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
-    cout << "║   USER CLIENT                      ║" << endl;
-    cout << "╚════════════════════════════════════╝" << endl;
-
-    handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
-        scooterLoans, scooterLoanCount, utterances, utteranceCount,
-        collector, fileManager);
-
-    return 0;
-}
+//int main() {
+//    // Initialize data
+//    Utterance utterances[Config::MAX_UTTERANCES];
+//    HomeLoan homeLoans[Config::MAX_LOANS];
+//    CarLoan carLoans[Config::MAX_LOANS];
+//    ScooterLoan scooterLoans[Config::MAX_LOANS];
+//    FileManager fileManager;
+//    ApplicationCollector collector;
+//
+//    int utteranceCount = loadUtterances(utterances, Config::MAX_UTTERANCES, Config::UTTERANCES_FILE);
+//    int homeLoanCount = loadHomeLoans(homeLoans, Config::MAX_LOANS, Config::HOME_LOANS_FILE);
+//    int carLoanCount = loadCarLoans(carLoans, Config::MAX_LOANS, Config::CAR_LOANS_FILE);
+//    int scooterLoanCount = loadScooterLoans(scooterLoans, Config::MAX_LOANS, Config::SCOOTER_LOANS_FILE);
+//
+//    cout << "╔════════════════════════════════════╗" << endl;
+//    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
+//    cout << "║   USER CLIENT                      ║" << endl;
+//    cout << "╚════════════════════════════════════╝" << endl;
+//
+//    handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
+//        scooterLoans, scooterLoanCount, utterances, utteranceCount,
+//        collector, fileManager);
+//
+//    return 0;
+//}

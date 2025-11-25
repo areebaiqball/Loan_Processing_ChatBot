@@ -316,27 +316,7 @@ ValidationResult LoanApplication::validateExistingLoans() const {
     return result;
 }
 
-/// <summary>
-/// Validates references data
-/// </summary>
-/// <returns>Validation result object</returns>
-ValidationResult LoanApplication::validateReferences() const {
-    ValidationResult result;
 
-    if (!reference1.validate()) {
-        result.addError("Reference 1: Invalid reference data");
-    }
-
-    if (!reference2.validate()) {
-        result.addError("Reference 2: Invalid reference data");
-    }
-
-    if (reference1.cnic == reference2.cnic) {
-        result.addError("References must be different people (same CNIC detected)");
-    }
-
-    return result;
-}
 
 /// <summary>
 /// Validates debt-to-income ratio
@@ -479,4 +459,186 @@ string LoanApplication::getRejectionReason() const {
 
 void LoanApplication::setRejectionReason(const string& reason) {
     rejectionReason = reason;
+}
+
+
+void LoanApplication::markSectionCompleted(const string& section) {
+    if (!isSectionCompleted(section)) {
+        if (!completedSections.empty()) {
+            completedSections += ",";
+        }
+        completedSections += section;
+    }
+
+    // Update overall status based on completed sections
+    if (section == "personal") {
+        status = "incomplete_financial";
+    }
+    else if (section == "financial") {
+        status = "incomplete_references";
+    }
+    else if (section == "references") {
+        status = "incomplete_documents";
+    }
+    else if (section == "documents") {
+        status = "submitted";
+        if (submissionDate.empty()) {
+            submissionDate = getCurrentDate();
+        }
+    }
+}
+
+bool LoanApplication::isSectionCompleted(const string& section) const {
+    return completedSections.find(section) != string::npos;
+}
+
+vector<string> LoanApplication::getIncompleteSections() const {
+    vector<string> sections = { "personal", "financial", "references", "documents" };
+    vector<string> incomplete;
+
+    for (const auto& section : sections) {
+        if (!isSectionCompleted(section)) {
+            incomplete.push_back(section);
+        }
+    }
+
+    return incomplete;
+}
+
+bool LoanApplication::isApplicationComplete() const {
+    return status == "submitted" || status == "approved" || status == "rejected";
+}
+
+string LoanApplication::getNextIncompleteSection() const {
+    if (!isSectionCompleted("personal")) return "personal";
+    if (!isSectionCompleted("financial")) return "financial";
+    if (!isSectionCompleted("references")) return "references";
+    if (!isSectionCompleted("documents")) return "documents";
+    return "complete";
+}
+
+string LoanApplication::getCompletedSections() const {
+    return completedSections;
+}
+
+void LoanApplication::setCompletedSections(const string& sections) {
+    completedSections = sections;
+}
+
+// Validation methods for each section
+ValidationResult LoanApplication::validatePersonalInfo() const {
+    ValidationResult result;
+
+    if (fullName.empty()) result.addError("Full name is required");
+    if (fathersName.empty()) result.addError("Father's name is required");
+    if (postalAddress.empty()) result.addError("Postal address is required");
+    if (contactNumber.empty()) result.addError("Contact number is required");
+    if (emailAddress.empty()) result.addError("Email address is required");
+    if (cnicNumber.empty()) result.addError("CNIC is required");
+    if (cnicExpiryDate.empty()) result.addError("CNIC expiry date is required");
+    if (employmentStatus.empty()) result.addError("Employment status is required");
+    if (maritalStatus.empty()) result.addError("Marital status is required");
+    if (gender.empty()) result.addError("Gender is required");
+    if (numberOfDependents < 0) result.addError("Number of dependents cannot be negative");
+
+    // CNIC validation
+    if (cnicNumber.length() != 13) {
+        result.addError("CNIC must be exactly 13 digits");
+    }
+    else {
+        for (char c : cnicNumber) {
+            if (!isdigit(static_cast<unsigned char>(c))) {
+                result.addError("CNIC must contain only digits");
+                break;
+            }
+        }
+    }
+
+    // Email validation
+    if (emailAddress.find('@') == string::npos || emailAddress.find('.') == string::npos) {
+        result.addError("Invalid email format");
+    }
+
+    return result;
+}
+
+ValidationResult LoanApplication::validateFinancialInfo() const {
+    ValidationResult result;
+
+    if (annualIncome < 0) result.addError("Annual income cannot be negative");
+    if (avgElectricityBill < 0) result.addError("Average electricity bill cannot be negative");
+    if (currentElectricityBill < 0) result.addError("Current electricity bill cannot be negative");
+
+    if (annualIncome > 1000000000) result.addWarning("Annual income seems unusually high");
+    if (avgElectricityBill > 100000) result.addWarning("Average electricity bill seems unusually high");
+    if (currentElectricityBill > 100000) result.addWarning("Current electricity bill seems unusually high");
+
+    // Validate existing loans
+    for (size_t i = 0; i < existingLoans.size(); i++) {
+        const ExistingLoan& loan = existingLoans[i];
+        if (!loan.validate()) {
+            result.addError("Invalid data in existing loan #" + to_string(i + 1));
+        }
+    }
+
+    return result;
+}
+
+ValidationResult LoanApplication::validateReferences() const {
+    ValidationResult result;
+
+    if (!reference1.validate()) {
+        result.addError("Invalid data for reference 1");
+    }
+    if (!reference2.validate()) {
+        result.addError("Invalid data for reference 2");
+    }
+    if (reference1.cnic == reference2.cnic) {
+        result.addError("References must have different CNIC numbers");
+    }
+
+    return result;
+}
+
+ValidationResult LoanApplication::validateDocuments() const {
+    ValidationResult result;
+
+    if (cnicFrontImagePath.empty()) result.addError("CNIC front image is required");
+    if (cnicBackImagePath.empty()) result.addError("CNIC back image is required");
+    if (electricityBillImagePath.empty()) result.addError("Electricity bill image is required");
+    if (salarySlipImagePath.empty()) result.addError("Salary slip or bank statement is required");
+
+    return result;
+}
+ValidationResult LoanApplication::validateForLoanType(const string& loanType, long long loanAmount) const {
+    ValidationResult result;
+
+    if (!validateIncomeForLoanType(loanType, loanAmount, result)) {
+        result.addError("Income insufficient for requested loan amount");
+    }
+
+    if (!validateDebtToIncomeRatio(result)) {
+        result.addWarning("High debt-to-income ratio detected");
+    }
+
+    return result;
+}
+bool LoanApplication::validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const {
+    if (annualIncome <= 0) {
+        result.addError("Annual income must be positive");
+        return false;
+    }
+
+    double ratio = static_cast<double>(loanAmount) / annualIncome;
+
+    if (ratio > 5.0) {
+        result.addError("Loan amount cannot exceed 5 times annual income");
+        return false;
+    }
+
+    if (ratio > 3.0) {
+        result.addWarning("Loan amount is high relative to income");
+    }
+
+    return true;
 }

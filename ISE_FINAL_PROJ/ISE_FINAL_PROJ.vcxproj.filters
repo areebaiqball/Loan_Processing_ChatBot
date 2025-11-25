@@ -21,9 +21,6 @@
     <ClCompile Include="home.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +40,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="lender_server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lender_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="multi_session_collector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="application_multi_session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="file_manager_multi_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,16 +83,8 @@
     <ClInclude Include="ui_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="run_lender.bat">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="run_user.bat">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="run_both.bat">
-      <Filter>Source Files</Filter>
-    </None>
+    <ClInclude Include="multi_session_collector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

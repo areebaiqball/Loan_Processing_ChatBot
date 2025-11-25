@@ -13,7 +13,7 @@ FileManager::FileManager(const string& appsFile, const string& imagesDir)
 }
 
 string FileManager::generateApplicationId() const {
-    static int counter = 1001; 
+    static int counter = 1001;
 
     ifstream file(applicationsFile);
     string line;
@@ -77,7 +77,7 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
     }
 
     // Open destination file for writing
-    ofstream destination(destinationPath, ios::binary | ios::trunc);  // Add ios::trunc
+    ofstream destination(destinationPath, ios::binary | ios::trunc);
     if (!destination.is_open()) {
         cerr << "ERROR: Failed to create destination: " << destinationPath << endl;
         source.close();
@@ -127,6 +127,7 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
         << " (" << destSize << " bytes)" << endl;
     return true;
 }
+
 bool FileManager::saveApplication(LoanApplication& application) {
     cout << "DEBUG: saveApplication called for: " << application.getFullName()
         << " | Loan Type: " << application.getLoanType() << endl;
@@ -287,156 +288,6 @@ bool FileManager::saveApplication(LoanApplication& application) {
     }
 }
 
-vector<LoanApplication> FileManager::loadAllApplications() const {
-    vector<LoanApplication> applications;
-    ifstream file(applicationsFile);
-
-    if (!file.is_open()) {
-        cerr << "Warning: Could not open applications file" << endl;
-        return applications;
-    }
-
-    string line;
-    int lineNumber = 0;
-
-    while (getline(file, line)) {
-        lineNumber++;
-        if (line.empty()) continue;
-
-        try {
-            vector<string> parts = splitString(line, Config::DELIMITER);
-
-            if (parts.size() < 17) {
-                cerr << "Warning: Line " << lineNumber << " has insufficient fields (" << parts.size() << ")" << endl;
-                continue;
-            }
-
-            LoanApplication app;
-
-            // Basic application data with validation
-            if (!parts[0].empty()) app.setApplicationId(parts[0]);
-            if (!parts[1].empty()) app.setStatus(parts[1]);
-            if (!parts[2].empty()) app.setSubmissionDate(parts[2]);
-
-            // Personal information
-            if (!parts[3].empty()) app.setFullName(parts[3]);
-            if (!parts[4].empty()) app.setFathersName(parts[4]);
-            if (!parts[5].empty()) app.setPostalAddress(parts[5]);
-            if (!parts[6].empty()) app.setContactNumber(parts[6]);
-            if (!parts[7].empty()) app.setEmailAddress(parts[7]);
-            if (!parts[8].empty()) app.setCnicNumber(parts[8]);
-            if (!parts[9].empty()) app.setCnicExpiryDate(parts[9]);
-
-            // Employment & Financial
-            if (!parts[10].empty()) app.setEmploymentStatus(parts[10]);
-            if (!parts[11].empty()) app.setMaritalStatus(parts[11]);
-            if (!parts[12].empty()) app.setGender(parts[12]);
-
-            try {
-                if (!parts[13].empty()) app.setNumberOfDependents(stoi(parts[13]));
-            }
-            catch (...) {
-                cerr << "Warning: Invalid dependents at line " << lineNumber << ": " << parts[13] << endl;
-            }
-
-            try {
-                if (!parts[14].empty()) app.setAnnualIncome(stoll(parts[14]));
-            }
-            catch (...) {
-                cerr << "Warning: Invalid income at line " << lineNumber << ": " << parts[14] << endl;
-            }
-
-            try {
-                if (!parts[15].empty()) app.setAvgElectricityBill(stoll(parts[15]));
-            }
-            catch (...) {
-                cerr << "Warning: Invalid avg bill at line " << lineNumber << ": " << parts[15] << endl;
-            }
-
-            try {
-                if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16]));
-            }
-            catch (...) {
-                cerr << "Warning: Invalid current bill at line " << lineNumber << ": " << parts[16] << endl;
-            }
-
-            if (parts.size() > 17 && !parts[17].empty()) {
-                string loanType = parts[17];
-                if (loanType == "0" || loanType == "Unknown" || loanType.empty()) {
-                    app.setLoanType("Personal Loan");
-                }
-                else {
-                    app.setLoanType(loanType);
-                }
-            }
-            else {
-                app.setLoanType("Personal Loan"); 
-            }
-
-            if (parts.size() > 18 && !parts[18].empty()) {
-                app.setLoanCategory(parts[18]);
-            }
-            else {
-                app.setLoanCategory("Standard");
-            }
-
-            // Loan amount
-            if (parts.size() > 19 && !parts[19].empty()) {
-                try {
-                    app.setLoanAmount(stoll(parts[19]));
-                }
-                catch (...) {
-                    app.setLoanAmount(0);
-                }
-            }
-
-            // Down payment
-            if (parts.size() > 20 && !parts[20].empty()) {
-                try {
-                    app.setDownPayment(stoll(parts[20]));
-                }
-                catch (...) {
-                    app.setDownPayment(0);
-                }
-            }
-
-            // Installment months
-            if (parts.size() > 21 && !parts[21].empty()) {
-                try {
-                    app.setInstallmentMonths(stoi(parts[21]));
-                }
-                catch (...) {
-                    app.setInstallmentMonths(0);
-                }
-            }
-
-            // Monthly payment
-            if (parts.size() > 22 && !parts[22].empty()) {
-                try {
-                    app.setMonthlyPayment(stoll(parts[22]));
-                }
-                catch (...) {
-                    app.setMonthlyPayment(0);
-                }
-            }
-
-            // Rejection reason
-            if (parts.size() > 25 && !parts[25].empty()) {
-                app.setRejectionReason(parts[25]);
-            }
-
-            applications.push_back(app);
-
-        }
-        catch (const exception& e) {
-            cerr << "Error parsing application at line " << lineNumber << ": " << e.what() << endl;
-            cerr << "Line content: " << line.substr(0, 100) << "..." << endl;
-        }
-    }
-
-    file.close();
-    return applications;
-}
 vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) const {
     vector<LoanApplication> results;
     ifstream file(applicationsFile);
@@ -535,10 +386,11 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
     file.close();
     return results;
 }
+
 void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, int& approved, int& rejected) const {
     submitted = approved = rejected = 0;
 
-    auto applications = loadAllApplications();
+    vector<LoanApplication> applications = loadAllApplications();
     for (size_t i = 0; i < applications.size(); i++) {
         if (applications[i].getCnicNumber().empty()) continue;
 
@@ -550,6 +402,7 @@ void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, 
         }
     }
 }
+
 bool FileManager::updateApplicationStatus(const string& applicationId, const string& newStatus, const string& rejectionReason) {
     // Read all applications
     vector<string> lines;
@@ -807,6 +660,301 @@ vector<LoanApplication> FileManager::loadAllApplicationsDetailed() const {
             catch (const exception& e) {
                 cerr << "Error parsing application: " << e.what() << endl;
             }
+        }
+    }
+
+    file.close();
+    return applications;
+}
+
+string FileManager::applicationToFileFormat(const LoanApplication& application) const {
+    stringstream ss;
+
+    // Basic application data
+    ss << application.getApplicationId() << Config::DELIMITER
+        << application.getStatus() << Config::DELIMITER
+        << application.getSubmissionDate() << Config::DELIMITER
+        << application.getCompletedSections() << Config::DELIMITER
+        << application.getFullName() << Config::DELIMITER
+        << application.getFathersName() << Config::DELIMITER
+        << application.getPostalAddress() << Config::DELIMITER
+        << application.getContactNumber() << Config::DELIMITER
+        << application.getEmailAddress() << Config::DELIMITER
+        << application.getCnicNumber() << Config::DELIMITER
+        << application.getCnicExpiryDate() << Config::DELIMITER
+        << application.getEmploymentStatus() << Config::DELIMITER
+        << application.getMaritalStatus() << Config::DELIMITER
+        << application.getGender() << Config::DELIMITER
+        << application.getNumberOfDependents() << Config::DELIMITER
+        << application.getAnnualIncome() << Config::DELIMITER
+        << application.getAvgElectricityBill() << Config::DELIMITER
+        << application.getCurrentElectricityBill() << Config::DELIMITER
+        << application.getLoanType() << Config::DELIMITER
+        << application.getLoanCategory() << Config::DELIMITER
+        << application.getLoanAmount() << Config::DELIMITER
+        << application.getDownPayment() << Config::DELIMITER
+        << application.getInstallmentMonths() << Config::DELIMITER
+        << application.getMonthlyPayment() << Config::DELIMITER
+        << application.getInstallmentStartMonth() << Config::DELIMITER
+        << application.getInstallmentStartYear() << Config::DELIMITER
+        << application.getRejectionReason() << Config::DELIMITER;
+
+    // Existing loans
+    vector<ExistingLoan> existingLoans = application.getExistingLoans();
+    ss << existingLoans.size() << Config::DELIMITER;
+    for (size_t i = 0; i < existingLoans.size(); i++) {
+        const auto& loan = existingLoans[i];
+        ss << loan.isActive << Config::DELIMITER
+            << loan.totalAmount << Config::DELIMITER
+            << loan.amountReturned << Config::DELIMITER
+            << loan.amountDue << Config::DELIMITER
+            << loan.bankName << Config::DELIMITER
+            << loan.loanCategory << Config::DELIMITER;
+    }
+
+    // References
+    Reference ref1 = application.getReference1();
+    Reference ref2 = application.getReference2();
+
+    ss << ref1.name << Config::DELIMITER
+        << ref1.cnic << Config::DELIMITER
+        << ref1.cnicIssueDate << Config::DELIMITER
+        << ref1.phoneNumber << Config::DELIMITER
+        << ref1.email << Config::DELIMITER
+        << ref2.name << Config::DELIMITER
+        << ref2.cnic << Config::DELIMITER
+        << ref2.cnicIssueDate << Config::DELIMITER
+        << ref2.phoneNumber << Config::DELIMITER
+        << ref2.email << Config::DELIMITER;
+
+    // Image paths
+    ss << application.getCnicFrontImagePath() << Config::DELIMITER
+        << application.getCnicBackImagePath() << Config::DELIMITER
+        << application.getElectricityBillImagePath() << Config::DELIMITER
+        << application.getSalarySlipImagePath();
+
+    return ss.str();
+}
+
+LoanApplication FileManager::applicationFromFileFormat(const vector<string>& parts) const {
+    LoanApplication app;
+
+    if (parts.size() < 28) return app; // Minimum required fields
+
+    try {
+        // Basic application data
+        app.setApplicationId(parts[0]);
+        app.setStatus(parts[1]);
+        app.setSubmissionDate(parts[2]);
+        app.setCompletedSections(parts[3]);
+
+        // Personal information
+        app.setFullName(parts[4]);
+        app.setFathersName(parts[5]);
+        app.setPostalAddress(parts[6]);
+        app.setContactNumber(parts[7]);
+        app.setEmailAddress(parts[8]);
+        app.setCnicNumber(parts[9]);
+        app.setCnicExpiryDate(parts[10]);
+        app.setEmploymentStatus(parts[11]);
+        app.setMaritalStatus(parts[12]);
+        app.setGender(parts[13]);
+
+        if (!parts[14].empty()) app.setNumberOfDependents(stoi(parts[14]));
+        if (!parts[15].empty()) app.setAnnualIncome(stoll(parts[15]));
+        if (!parts[16].empty()) app.setAvgElectricityBill(stoll(parts[16]));
+        if (!parts[17].empty()) app.setCurrentElectricityBill(stoll(parts[17]));
+
+        // Loan details
+        if (parts.size() > 18) app.setLoanType(parts[18]);
+        if (parts.size() > 19) app.setLoanCategory(parts[19]);
+        if (parts.size() > 20 && !parts[20].empty()) app.setLoanAmount(stoll(parts[20]));
+        if (parts.size() > 21 && !parts[21].empty()) app.setDownPayment(stoll(parts[21]));
+        if (parts.size() > 22 && !parts[22].empty()) app.setInstallmentMonths(stoi(parts[22]));
+        if (parts.size() > 23 && !parts[23].empty()) app.setMonthlyPayment(stoll(parts[23]));
+
+        // Rejection reason
+        if (parts.size() > 26 && !parts[26].empty()) app.setRejectionReason(parts[26]);
+
+        // Existing loans
+        if (parts.size() > 27) {
+            int loanCount = 0;
+            try { loanCount = stoi(parts[27]); }
+            catch (...) {}
+
+            int index = 28;
+            for (int i = 0; i < loanCount && index + 5 < parts.size(); i++) {
+                ExistingLoan loan;
+                loan.isActive = (parts[index] == "1" || toLower(parts[index]) == "true");
+                loan.totalAmount = stoll(parts[index + 1]);
+                loan.amountReturned = stoll(parts[index + 2]);
+                loan.amountDue = stoll(parts[index + 3]);
+                loan.bankName = parts[index + 4];
+                loan.loanCategory = parts[index + 5];
+                app.addExistingLoan(loan);
+                index += 6;
+            }
+
+            // References
+            if (index + 9 < parts.size()) {
+                Reference ref1;
+                ref1.name = parts[index];
+                ref1.cnic = parts[index + 1];
+                ref1.cnicIssueDate = parts[index + 2];
+                ref1.phoneNumber = parts[index + 3];
+                ref1.email = parts[index + 4];
+                app.setReference1(ref1);
+
+                Reference ref2;
+                ref2.name = parts[index + 5];
+                ref2.cnic = parts[index + 6];
+                ref2.cnicIssueDate = parts[index + 7];
+                ref2.phoneNumber = parts[index + 8];
+                ref2.email = parts[index + 9];
+                app.setReference2(ref2);
+                index += 10;
+            }
+
+            // Image paths
+            if (index + 3 < parts.size()) {
+                app.setCnicFrontImagePath(parts[index]);
+                app.setCnicBackImagePath(parts[index + 1]);
+                app.setElectricityBillImagePath(parts[index + 2]);
+                app.setSalarySlipImagePath(parts[index + 3]);
+            }
+        }
+
+    }
+    catch (const exception& e) {
+        cerr << "Error parsing application: " << e.what() << endl;
+    }
+
+    return app;
+}
+
+bool FileManager::updateApplicationSection(const LoanApplication& application, const string& section) {
+    vector<string> lines;
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        cerr << "Error: Could not open applications file" << endl;
+        return false;
+    }
+
+    string line;
+    bool found = false;
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        vector<string> parts = splitString(line, Config::DELIMITER);
+        if (!parts.empty() && parts[0] == application.getApplicationId()) {
+            // Replace with updated application
+            LoanApplication updatedApp = application;
+            updatedApp.markSectionCompleted(section);
+            string updatedLine = applicationToFileFormat(updatedApp);
+            lines.push_back(updatedLine);
+            found = true;
+        }
+        else {
+            lines.push_back(line);
+        }
+    }
+    file.close();
+
+    if (!found) {
+        // Application doesn't exist yet, add it
+        LoanApplication newApp = application;
+        newApp.markSectionCompleted(section);
+        lines.push_back(applicationToFileFormat(newApp));
+        found = true;
+    }
+
+    // Write back to file
+    ofstream outFile(applicationsFile);
+    if (!outFile.is_open()) {
+        cerr << "Error: Could not open applications file for writing" << endl;
+        return false;
+    }
+
+    for (const auto& l : lines) {
+        outFile << l << endl;
+    }
+    outFile.close();
+
+    cout << "✓ Section '" << section << "' saved successfully for application "
+        << application.getApplicationId() << endl;
+    return true;
+}
+
+// Multi-session support methods - SINGLE IMPLEMENTATION ONLY
+LoanApplication FileManager::findIncompleteApplication(const string& applicationId, const string& cnic) const {
+    vector<LoanApplication> allApplications = loadAllApplications();
+
+    for (size_t i = 0; i < allApplications.size(); i++) {
+        const LoanApplication& app = allApplications[i];
+        if (app.getApplicationId() == applicationId &&
+            app.getCnicNumber() == cnic &&
+            !app.isApplicationComplete()) {
+            return app;
+        }
+    }
+
+    return LoanApplication(); // Return empty application if not found
+}
+
+vector<LoanApplication> FileManager::findUserIncompleteApplications(const string& cnic) const {
+    vector<LoanApplication> allApplications = loadAllApplications();
+    vector<LoanApplication> incompleteApps;
+
+    for (size_t i = 0; i < allApplications.size(); i++) {
+        const LoanApplication& app = allApplications[i];
+        if (app.getCnicNumber() == cnic && !app.isApplicationComplete()) {
+            incompleteApps.push_back(app);
+        }
+    }
+
+    return incompleteApps;
+}
+
+bool FileManager::canUpdateApplication(const string& applicationId, const string& cnic) const {
+    LoanApplication app = findIncompleteApplication(applicationId, cnic);
+    return !app.getApplicationId().empty() && !app.isApplicationComplete();
+}
+
+// Update loadAllApplications to use new format
+vector<LoanApplication> FileManager::loadAllApplications() const {
+    vector<LoanApplication> applications;
+    ifstream file(applicationsFile);
+
+    if (!file.is_open()) {
+        cerr << "Warning: Could not open applications file" << endl;
+        return applications;
+    }
+
+    string line;
+    int lineNumber = 0;
+
+    while (getline(file, line)) {
+        lineNumber++;
+        if (line.empty()) continue;
+
+        try {
+            vector<string> parts = splitString(line, Config::DELIMITER);
+
+            if (parts.size() < 4) { // At least ID, status, date, completed sections
+                cerr << "Warning: Line " << lineNumber << " has insufficient fields (" << parts.size() << ")" << endl;
+                continue;
+            }
+
+            LoanApplication app = applicationFromFileFormat(parts);
+            if (!app.getApplicationId().empty()) {
+                applications.push_back(app);
+            }
+
+        }
+        catch (const exception& e) {
+            cerr << "Error parsing application at line " << lineNumber << ": " << e.what() << endl;
         }
     }
 

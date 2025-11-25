@@ -7,9 +7,6 @@
 #include <sstream>
 using namespace std;
 
-/// <summary>
-/// Base exception class for loan application errors
-/// </summary>
 class LoanApplicationException : public exception {
 private:
     string message;
@@ -18,17 +15,11 @@ public:
     const char* what() const noexcept override { return message.c_str(); }
 };
 
-/// <summary>
-/// Exception for data validation errors
-/// </summary>
 class ValidationException : public LoanApplicationException {
 public:
     ValidationException(const string& msg) : LoanApplicationException("Validation Error: " + msg) {}
 };
 
-/// <summary>
-/// Validation result with detailed error information
-/// </summary>
 struct ValidationResult {
     bool isValid;
     vector<string> errors;
@@ -63,9 +54,6 @@ struct ValidationResult {
     }
 };
 
-/// <summary>
-/// Represents an existing loan for an applicant
-/// </summary>
 struct ExistingLoan {
     bool isActive = false;
     long long totalAmount = 0;
@@ -74,9 +62,6 @@ struct ExistingLoan {
     string bankName;
     string loanCategory;
 
-    /// <summary>
-    /// Validates existing loan data
-    /// </summary>
     bool validate() const {
         if (bankName.empty()) return false;
         if (loanCategory.empty()) return false;
@@ -87,9 +72,6 @@ struct ExistingLoan {
     }
 };
 
-/// <summary>
-/// Represents a reference person for the applicant
-/// </summary>
 struct Reference {
     string name;
     string cnic;
@@ -112,15 +94,12 @@ struct Reference {
     }
 };
 
-/// <summary>
-/// Represents a complete loan application with all applicant data
-/// </summary>
 class LoanApplication {
 private:
-    // Application data
     string applicationId;
     string status;
     string submissionDate;
+    string completedSections;
 
     string loanType;
     string loanCategory;
@@ -131,7 +110,6 @@ private:
     int installmentStartMonth;
     int installmentStartYear;
 
-    // Personal Information
     string fullName;
     string fathersName;
     string postalAddress;
@@ -140,25 +118,20 @@ private:
     string cnicNumber;
     string cnicExpiryDate;
 
-    // Personal Details
     string employmentStatus;
     string maritalStatus;
     string gender;
     int numberOfDependents;
 
-    // Financial Information
     long long annualIncome;
     long long avgElectricityBill;
     long long currentElectricityBill;
 
-    // Existing Loans
     vector<ExistingLoan> existingLoans;
 
-    // References
     Reference reference1;
     Reference reference2;
 
-    // Image Paths
     string cnicFrontImagePath;
     string cnicBackImagePath;
     string electricityBillImagePath;
@@ -172,14 +145,11 @@ private:
     string additionalSalarySlipsImagePath;
     string businessDocumentsImagePath;
 
-    // ADD REJECTION REASON FIELD
     string rejectionReason;
 
 public:
-    // Constructors
     LoanApplication();
 
-    // Getters
     string getApplicationId() const;
     string getStatus() const;
     string getSubmissionDate() const;
@@ -212,12 +182,8 @@ public:
     long long getMonthlyPayment() const;
     int getInstallmentStartMonth() const;
     int getInstallmentStartYear() const;
-
-    // ADD REJECTION REASON GETTER/SETTER
     string getRejectionReason() const;
-    void setRejectionReason(const string& reason);
 
-    // Setters
     void setApplicationId(const string& id);
     void setStatus(const string& stat);
     void setSubmissionDate(const string& date);
@@ -249,6 +215,7 @@ public:
     void setMonthlyPayment(long long payment);
     void setInstallmentStartMonth(int month);
     void setInstallmentStartYear(int year);
+    void setRejectionReason(const string& reason);
 
     string getReference1CnicFrontImagePath() const;
     void setReference1CnicFrontImagePath(const string& path);
@@ -265,12 +232,10 @@ public:
     string getBusinessDocumentsImagePath() const;
     void setBusinessDocumentsImagePath(const string& path);
 
-    // Existing Loans Management
     void addExistingLoan(const ExistingLoan& loan);
     void clearExistingLoans();
     int getExistingLoansCount() const;
 
-    // Validation
     ValidationResult validateCompleteApplication() const;
     ValidationResult validateForLoanType(const string& loanType, long long loanAmount) const;
     bool validateIncomeToLoanRatio(long long loanAmount, ValidationResult& result) const;
@@ -279,6 +244,19 @@ public:
     ValidationResult validateReferences() const;
     ValidationResult validateEmploymentAndFinancialInfo() const;
     bool validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const;
+
+    // Multi-session methods
+    void markSectionCompleted(const string& section);
+    bool isSectionCompleted(const string& section) const;
+    vector<string> getIncompleteSections() const;
+    bool isApplicationComplete() const;
+    string getNextIncompleteSection() const;
+    string getCompletedSections() const;
+    void setCompletedSections(const string& sections);
+
+    ValidationResult validatePersonalInfo() const;
+    ValidationResult validateFinancialInfo() const;
+    ValidationResult validateDocuments() const;
 };
 
 #endif

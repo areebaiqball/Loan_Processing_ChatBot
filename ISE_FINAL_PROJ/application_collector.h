@@ -9,7 +9,6 @@
 #include <string>
 
 using namespace std;
-
 class ApplicationCollector {
 private:
     bool collectPersonalInfo(LoanApplication& application);
@@ -17,6 +16,13 @@ private:
     bool collectExistingLoansInfo(LoanApplication& application);
     bool collectReferencesInfo(LoanApplication& application);
     bool confirmApplication(const LoanApplication& application);
+    bool collectImagePaths(LoanApplication& application);
+    bool collectReferenceDocuments(LoanApplication& application);
+    bool collectFinancialDocuments(LoanApplication& application);
+    void collectInstallmentStartDate(LoanApplication& application);
+    bool getValidatedYesNo(const string& prompt);
+
+public:
     string getValidatedString(const string& prompt, const string& fieldName, size_t minLength = 1, size_t maxLength = 255);
     long long getValidatedNumeric(const string& prompt, const string& fieldName, long long minValue = 0, long long maxValue = 999999999999);
     string getValidatedCNIC(const string& prompt);
@@ -24,20 +30,11 @@ private:
     string getValidatedPhone(const string& prompt);
     string getValidatedDate(const string& prompt);
     string getSelectionFromOptions(const string& prompt, const vector<string>& options);
-    bool collectImagePaths(LoanApplication& application);
     string getImagePath(const string& imageType);
-    bool collectReferenceDocuments(LoanApplication& application);
-    bool collectFinancialDocuments(LoanApplication& application);
     string getValidatedCNICIssueDate(const string& prompt);
     string getValidatedCNICExpiryDate(const string& prompt);
-    void collectInstallmentStartDate(LoanApplication& application);
 
-   
-    bool getValidatedYesNo(const string& prompt);
-
-public:
     LoanApplication collectApplicationForLoan(const string& loanType, const string& loanDetails);
     void collectLoanSpecificInfo(LoanApplication& application, const string& loanType, const string& loanDetails);
 };
-
 #endif
