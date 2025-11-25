@@ -419,7 +419,7 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
             }
 
             try {
-                LoanApplication application = collector.collectApplicationForLoan("home", "Home Loan", fileManager);
+                LoanApplication application = collector.collectApplicationForLoan("home", "Home Loan");
 
                 application.setLoanType("Home Loan");
                 application.setLoanCategory("Area " + areaInput + " - Option " + to_string(optionNumber));
@@ -600,7 +600,7 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
         }
 
         try {
-            LoanApplication application = collector.collectApplicationForLoan("car", "Car Loan", fileManager);
+            LoanApplication application = collector.collectApplicationForLoan("car", "Car Loan");
 
             application.setLoanType("Car Loan");
             application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
@@ -717,7 +717,7 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
         }
 
         try {
-            LoanApplication application = collector.collectApplicationForLoan("scooter", "Scooter Loan", fileManager);
+            LoanApplication application = collector.collectApplicationForLoan("scooter", "Scooter Loan");
 
             application.setLoanType("Scooter Loan");
             application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
@@ -781,7 +781,7 @@ void handlePersonalLoanSelection(bool& running, ApplicationCollector& collector,
 
     if (toLower(trim(userInput)) == "y" || toLower(trim(userInput)) == "yes") {
         try {
-            LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan", fileManager);
+            LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan");
 
             application.setLoanType("Personal Loan");
             application.setLoanCategory("Standard Personal Loan");

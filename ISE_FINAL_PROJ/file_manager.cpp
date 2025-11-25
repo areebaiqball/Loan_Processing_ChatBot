@@ -47,11 +47,11 @@ bool FileManager::fileExists(const string& filename) const {
     return file.good();
 }
 
-
 bool FileManager::copyImageFile(const string& sourcePath, const string& destinationPath) const {
+    // Validate source file exists and is not empty
     ifstream sourceCheck(sourcePath, ios::binary | ios::ate);
     if (!sourceCheck.is_open()) {
-        cerr << " ERROR: Cannot open source file for reading" << endl;
+        cerr << "ERROR: Cannot open source file: " << sourcePath << endl;
         return false;
     }
 
@@ -59,73 +59,77 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
     sourceCheck.close();
 
     if (sourceSize == 0) {
-        cerr << " ERROR: Source file is empty" << endl;
+        cerr << "ERROR: Source file is empty: " << sourcePath << endl;
         return false;
     }
 
-    // Open source file
+    // Prevent circular copying (source == destination)
+    if (sourcePath == destinationPath) {
+        cerr << "ERROR: Source and destination are the same: " << sourcePath << endl;
+        return false;
+    }
+
+    // Open source file for reading
     ifstream source(sourcePath, ios::binary);
     if (!source.is_open()) {
-        cerr << " ERROR: Failed to open source file for copying" << endl;
+        cerr << "ERROR: Failed to open source for reading: " << sourcePath << endl;
         return false;
     }
 
-    // Open destination file
-    ofstream destination(destinationPath, ios::binary);
+    // Open destination file for writing
+    ofstream destination(destinationPath, ios::binary | ios::trunc);  // Add ios::trunc
     if (!destination.is_open()) {
-        cerr << " ERROR: Failed to create destination file" << endl;
+        cerr << "ERROR: Failed to create destination: " << destinationPath << endl;
         source.close();
         return false;
     }
 
-    // Copy with buffer (without verbose output)
+    // Copy file in chunks
     const size_t bufferSize = 8192;
     char buffer[bufferSize];
-    bool success = true;
+    streamsize totalCopied = 0;
 
     while (source.read(buffer, bufferSize) || source.gcount() > 0) {
         streamsize bytesRead = source.gcount();
-        if (!destination.write(buffer, bytesRead)) {
-            cerr << " ERROR: Failed to write to destination" << endl;
-            success = false;
-            break;
+        destination.write(buffer, bytesRead);
+
+        if (destination.fail()) {
+            cerr << "ERROR: Write failed at byte " << totalCopied << endl;
+            source.close();
+            destination.close();
+            return false;
         }
+
+        totalCopied += bytesRead;
     }
 
-    // Check for errors
-    if (source.bad()) {
-        cerr << " ERROR: Source stream error" << endl;
-        success = false;
-    }
-    if (destination.bad()) {
-        cerr << " ERROR: Destination stream error" << endl;
-        success = false;
-    }
-
+    // Close files
     source.close();
     destination.close();
 
-    if (success) {
-        // Verify the copy silently
-        ifstream destCheck(destinationPath, ios::binary | ios::ate);
-        if (destCheck.is_open()) {
-            streamsize destSize = destCheck.tellg();
-            destCheck.close();
-
-            if (destSize != sourceSize) {
-                cerr << " ERROR: File copy incomplete (size mismatch)" << endl;
-                success = false;
-            }
-        }
-        else {
-            cerr << " ERROR: Cannot verify destination file" << endl;
-            success = false;
-        }
+    // Verify the copy
+    ifstream verifyDest(destinationPath, ios::binary | ios::ate);
+    if (!verifyDest.is_open()) {
+        cerr << "ERROR: Cannot verify destination file" << endl;
+        return false;
     }
 
-    return success;
+    streamsize destSize = verifyDest.tellg();
+    verifyDest.close();
+
+    if (destSize != sourceSize) {
+        cerr << "ERROR: File size mismatch. Source: " << sourceSize
+            << " bytes, Destination: " << destSize << " bytes" << endl;
+        return false;
+    }
+
+    cout << "✓ Image copied successfully: " << destinationPath
+        << " (" << destSize << " bytes)" << endl;
+    return true;
 }
 bool FileManager::saveApplication(LoanApplication& application) {
+    cout << "DEBUG: saveApplication called for: " << application.getFullName()
+        << " | Loan Type: " << application.getLoanType() << endl;
     ofstream file(applicationsFile, ios::app);
 
     if (!file.is_open()) {
@@ -142,15 +146,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
 
         string appId = application.getApplicationId();
 
-        // Check for circular copy protection
-        vector<string> sourcePaths = {
-            application.getCnicFrontImagePath(),
-            application.getCnicBackImagePath(),
-            application.getElectricityBillImagePath(),
-            application.getSalarySlipImagePath()
-        };
-
-
+        // Set default status and date if not already set
         if (application.getStatus().empty()) {
             application.setStatus("submitted");
         }
@@ -160,47 +156,66 @@ bool FileManager::saveApplication(LoanApplication& application) {
             application.setSubmissionDate(currentDate);
         }
 
-        // Copy images
+        // Get source paths
         string sourceCnicFront = application.getCnicFrontImagePath();
-        string newCnicFrontPath = imagesDirectory + appId + "_cnic_front.jpg";
-        if (copyImageFile(sourceCnicFront, newCnicFrontPath)) {
-            application.setCnicFrontImagePath(newCnicFrontPath);
-        }
-        else {
-            application.setCnicFrontImagePath("COPY_FAILED: " + sourceCnicFront);
-        }
-
         string sourceCnicBack = application.getCnicBackImagePath();
-        string newCnicBackPath = imagesDirectory + appId + "_cnic_back.jpg";
-        if (copyImageFile(sourceCnicBack, newCnicBackPath)) {
-            application.setCnicBackImagePath(newCnicBackPath);
-        }
-        else {
-            application.setCnicBackImagePath("COPY_FAILED: " + sourceCnicBack);
-        }
-
         string sourceElectricityBill = application.getElectricityBillImagePath();
-        string newElectricityBillPath = imagesDirectory + appId + "_electricity_bill.jpg";
-        if (copyImageFile(sourceElectricityBill, newElectricityBillPath)) {
-            application.setElectricityBillImagePath(newElectricityBillPath);
-        }
-        else {
-            application.setElectricityBillImagePath("COPY_FAILED: " + sourceElectricityBill);
+        string sourceSalarySlip = application.getSalarySlipImagePath();
+
+        // Check if images need copying (not already in images directory)
+        bool cnicFrontNeedsCopy = (sourceCnicFront.find(imagesDirectory) == string::npos);
+        bool cnicBackNeedsCopy = (sourceCnicBack.find(imagesDirectory) == string::npos);
+        bool electricityBillNeedsCopy = (sourceElectricityBill.find(imagesDirectory) == string::npos);
+        bool salarySlipNeedsCopy = (sourceSalarySlip.find(imagesDirectory) == string::npos);
+
+        // Copy CNIC Front
+        if (cnicFrontNeedsCopy) {
+            string newCnicFrontPath = imagesDirectory + appId + "_cnic_front.jpg";
+            if (copyImageFile(sourceCnicFront, newCnicFrontPath)) {
+                application.setCnicFrontImagePath(newCnicFrontPath);
+            }
+            else {
+                application.setCnicFrontImagePath("COPY_FAILED: " + sourceCnicFront);
+            }
         }
 
-        string sourceSalarySlip = application.getSalarySlipImagePath();
-        string newSalarySlipPath = imagesDirectory + appId + "_salary_slip.jpg";
-        if (copyImageFile(sourceSalarySlip, newSalarySlipPath)) {
-            application.setSalarySlipImagePath(newSalarySlipPath);
+        // Copy CNIC Back
+        if (cnicBackNeedsCopy) {
+            string newCnicBackPath = imagesDirectory + appId + "_cnic_back.jpg";
+            if (copyImageFile(sourceCnicBack, newCnicBackPath)) {
+                application.setCnicBackImagePath(newCnicBackPath);
+            }
+            else {
+                application.setCnicBackImagePath("COPY_FAILED: " + sourceCnicBack);
+            }
         }
-        else {
-            application.setSalarySlipImagePath("COPY_FAILED: " + sourceSalarySlip);
+
+        // Copy Electricity Bill
+        if (electricityBillNeedsCopy) {
+            string newElectricityBillPath = imagesDirectory + appId + "_electricity_bill.jpg";
+            if (copyImageFile(sourceElectricityBill, newElectricityBillPath)) {
+                application.setElectricityBillImagePath(newElectricityBillPath);
+            }
+            else {
+                application.setElectricityBillImagePath("COPY_FAILED: " + sourceElectricityBill);
+            }
+        }
+
+        // Copy Salary Slip
+        if (salarySlipNeedsCopy) {
+            string newSalarySlipPath = imagesDirectory + appId + "_salary_slip.jpg";
+            if (copyImageFile(sourceSalarySlip, newSalarySlipPath)) {
+                application.setSalarySlipImagePath(newSalarySlipPath);
+            }
+            else {
+                application.setSalarySlipImagePath("COPY_FAILED: " + sourceSalarySlip);
+            }
         }
 
         // Write application data to file
         file << application.getApplicationId() << Config::DELIMITER
             << application.getStatus() << Config::DELIMITER
-            << application.getSubmissionDate() << Config::DELIMITER  
+            << application.getSubmissionDate() << Config::DELIMITER
             << application.getFullName() << Config::DELIMITER
             << application.getFathersName() << Config::DELIMITER
             << application.getPostalAddress() << Config::DELIMITER
@@ -260,8 +275,8 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << application.getSalarySlipImagePath() << endl;
 
         file.close();
-        cout << "Application saved successfully with ID: " << application.getApplicationId() << endl;
-        cout << "Submission Date: " << application.getSubmissionDate() << endl;  
+        cout << "✓ Application saved successfully with ID: " << application.getApplicationId() << endl;
+        cout << "Submission Date: " << application.getSubmissionDate() << endl;
         return true;
 
     }
@@ -271,6 +286,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
         return false;
     }
 }
+
 vector<LoanApplication> FileManager::loadAllApplications() const {
     vector<LoanApplication> applications;
     ifstream file(applicationsFile);

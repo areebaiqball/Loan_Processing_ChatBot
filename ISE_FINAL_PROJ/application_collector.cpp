@@ -3,7 +3,7 @@
 #include <sstream>
 #include<fstream>
 
-LoanApplication ApplicationCollector::collectApplicationForLoan(const string& loanType, const string& loanDetails, FileManager& fileManager) {
+LoanApplication ApplicationCollector::collectApplicationForLoan(const string& loanType, const string& loanDetails) {
     cout << Config::CHATBOT_NAME << ": " << "Starting " << loanType << " loan application process..." << endl;
     cout << "Loan Type: " << loanDetails << endl << endl;
 
@@ -46,10 +46,6 @@ LoanApplication ApplicationCollector::collectApplicationForLoan(const string& lo
             throw runtime_error("Application cancelled by user");
         }
 
-        // Save the application
-        if (!fileManager.saveApplication(application)) {
-            throw runtime_error("Failed to save application");
-        }
 
     }
     catch (const exception& e) {
