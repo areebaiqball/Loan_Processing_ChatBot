@@ -31,7 +31,6 @@ void displayLenderMenu() {
 }
 
 
-
 void viewAllApplications(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
 
@@ -40,14 +39,44 @@ void viewAllApplications(FileManager& fileManager) {
         return;
     }
 
-    cout << endl << "========== ALL APPLICATIONS ==========" << endl;
-    cout << "Total: " << allApplications.size() << endl << endl;
+    // Remove duplicate application IDs - keep only the latest one
+    vector<LoanApplication> uniqueApps;
+    vector<string> seenIds;
 
-    for (size_t i = 0; i < allApplications.size(); i++) {
-        const auto& app = allApplications[i];
+    // Go through in reverse to keep the latest entry for each ID
+    for (int i = allApplications.size() - 1; i >= 0; i--) {
+        string appId = allApplications[i].getApplicationId();
+        bool alreadySeen = false;
+
+        for (const auto& id : seenIds) {
+            if (id == appId) {
+                alreadySeen = true;
+                break;
+            }
+        }
+
+        if (!alreadySeen) {
+            uniqueApps.insert(uniqueApps.begin(), allApplications[i]);
+            seenIds.push_back(appId);
+        }
+    }
+
+    cout << endl << "========== ALL APPLICATIONS ==========" << endl;
+    cout << "Total: " << uniqueApps.size() << endl << endl;
+
+    for (size_t i = 0; i < uniqueApps.size(); i++) {
+        const auto& app = uniqueApps[i];
+
+        // Show user-friendly status
+        string displayStatus = app.getStatus();
+        if (displayStatus == "C1") displayStatus = "Incomplete (Personal Info)";
+        else if (displayStatus == "C2") displayStatus = "Incomplete (Financial Info)";
+        else if (displayStatus == "C3") displayStatus = "Incomplete (References)";
+        else if (displayStatus == "incomplete_documents") displayStatus = "Incomplete (Documents)";
+
         cout << (i + 1) << ". ID: " << app.getApplicationId()
             << " | " << app.getFullName()
-            << " | Status: " << app.getStatus()
+            << " | Status: " << displayStatus
             << " | Income: PKR " << app.getAnnualIncome() << endl;
     }
 }

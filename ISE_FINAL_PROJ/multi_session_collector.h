@@ -26,12 +26,40 @@ private:
     FileManager& fileManager;           
     LoanApplication currentApplication;  
 
+    /// <summary>
+    /// Saves section progress and asks user to continue or exit
+    /// </summary>
+    /// <param name="application">Application to save</param>
+    /// <param name="section">Section name that was completed</param>
+    /// <returns>True if user wants to continue, false if saving and exiting</returns>
+    bool saveSectionAndContinue(LoanApplication& application, const string& section);
 
     /// <summary>
-    /// Collects personal information section
+    /// Displays loan type selection for personal loans
     /// </summary>
-    /// <param name="application">Application object to populate</param>
-    /// <returns>True if section completed successfully</returns>
+    /// <param name="application">Application to update with loan type</param>
+    void selectPersonalLoanType(LoanApplication& application);
+
+    /// <summary>
+    /// Gets user-friendly status description
+    /// </summary>
+    /// <param name="status">Internal status code</param>
+    /// <returns>Human-readable status description</returns>
+    string getStatusDescription(const string& status) const;
+
+public:
+    /// <summary>
+    /// Gets display name for a section
+    /// </summary>
+    /// <param name="section">Internal section name</param>
+    /// <returns>User-friendly section name</returns>
+    string getSectionDisplayName(const string& section) const;
+
+    /// <summary>
+   /// Collects personal information section
+   /// </summary>
+   /// <param name="application">Application object to populate</param>
+   /// <returns>True if section completed successfully</returns>
     bool collectPersonalInfo(LoanApplication& application);
 
     /// <summary>
@@ -55,35 +83,7 @@ private:
     /// <returns>True if section completed and application submitted</returns>
     bool collectDocumentsInfo(LoanApplication& application);
 
-    /// <summary>
-    /// Saves section progress and asks user to continue or exit
-    /// </summary>
-    /// <param name="application">Application to save</param>
-    /// <param name="section">Section name that was completed</param>
-    /// <returns>True if user wants to continue, false if saving and exiting</returns>
-    bool saveSectionAndContinue(LoanApplication& application, const string& section);
 
-    /// <summary>
-    /// Displays loan type selection for personal loans
-    /// </summary>
-    /// <param name="application">Application to update with loan type</param>
-    void selectPersonalLoanType(LoanApplication& application);
-
-    /// <summary>
-    /// Gets user-friendly status description
-    /// </summary>
-    /// <param name="status">Internal status code</param>
-    /// <returns>Human-readable status description</returns>
-    string getStatusDescription(const string& status) const;
-
-    /// <summary>
-    /// Gets display name for a section
-    /// </summary>
-    /// <param name="section">Internal section name</param>
-    /// <returns>User-friendly section name</returns>
-    string getSectionDisplayName(const string& section) const;
-
-public:
     /// <summary>
     /// Constructs MultiSessionCollector with required dependencies
     /// SE Principle: Dependency Injection - FileManager passed in

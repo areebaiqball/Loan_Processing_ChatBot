@@ -40,7 +40,6 @@ void displayLoanCategories() {
 // SE Principles: Strategy Pattern, Composition, Separation of Concerns
 void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& running,
     ApplicationCollector& collector, FileManager& fileManager) {
-
     cout << Config::CHATBOT_NAME << ": You selected home loan. Please select area (1-4):" << endl;
 
     bool validArea = false;
@@ -129,11 +128,13 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
             }
 
             try {
-                LoanApplication application = collector.collectApplicationForLoan("home", "Home Loan");
+                // Create application (don't use old collector)
+                LoanApplication application;
 
                 application.setLoanType("Home Loan");
                 application.setLoanCategory("Area " + areaInput + " - Option " + to_string(optionNumber));
 
+                // Get loan details from selected option
                 string areaName = "Area " + areaInput;
                 int currentOption = 0;
                 bool loanFound = false;
@@ -157,32 +158,58 @@ void handleHomeLoanSelection(const HomeLoan loans[], int loanCount, bool& runnin
                     continue;
                 }
 
-                cout << endl << Config::CHATBOT_NAME << ": Please review your application:" << endl;
-                displayApplicationDetails(application);
+                // Setup application
+                string appId = fileManager.generateApplicationId();
+                application.setApplicationId(appId);
+                application.setSubmissionDate(getCurrentDate());
+                application.setStatus("C1");
+                fileManager.updateApplicationSection(application, "");
 
-                cout << endl << Config::CHATBOT_NAME << ": Submit this application? (Y/N): ";
-                getline(cin, userInput);
-                string confirmInput = toLower(trim(userInput));
+                cout << endl << "Application created! ID: " << appId << endl;
 
-                if (confirmInput == "y" || confirmInput == "yes") {
-                    if (fileManager.saveApplication(application)) {
-                        cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
-                        cout << "Your Application ID: " << application.getApplicationId() << endl;
-                        cout << endl << "----------------------------------------" << endl;
-                        cout << "Check status by: Saying 'check my applications'" << endl;
-                        cout << "CNIC: " << application.getCnicNumber() << endl;
-                        cout << "----------------------------------------" << endl;
+                // Use multi-session collector
+                MultiSessionCollector multiCollector(fileManager);
+                bool continueProcessing = true;
+                bool applicationWasSubmitted = false;
 
-                        cout << endl << "Press any key to return to main menu...";
-                        getline(cin, userInput);
-                        return;
+                while (continueProcessing && !application.isApplicationComplete() && !applicationWasSubmitted) {
+                    string nextSection = application.getNextIncompleteSection();
+                    if (nextSection == "complete") break;
+
+                    bool sectionCompleted = false;
+                    if (nextSection == "personal") sectionCompleted = multiCollector.collectPersonalInfo(application);
+                    else if (nextSection == "financial") sectionCompleted = multiCollector.collectFinancialInfo(application);
+                    else if (nextSection == "references") sectionCompleted = multiCollector.collectReferencesInfo(application);
+                    else if (nextSection == "documents") {
+                        sectionCompleted = multiCollector.collectDocumentsInfo(application);
+                        if (sectionCompleted && application.getStatus() == "submitted") {
+                            applicationWasSubmitted = true;
+                            break;
+                        }
+                    }
+
+                    if (sectionCompleted && !applicationWasSubmitted) {
+                        if (application.getNextIncompleteSection() != "complete") {
+                            cout << endl << Config::CHATBOT_NAME << ": Continue to next section? (yes/no): ";
+                            string nextChoice;
+                            getline(cin, nextChoice);
+                            continueProcessing = (toLower(trim(nextChoice)) == "yes" || toLower(trim(nextChoice)) == "y");
+                            if (!continueProcessing) {
+                                cout << endl << "Progress saved! Application ID: " << appId << endl;
+                                return;
+                            }
+                        }
                     }
                     else {
-                        cout << Config::CHATBOT_NAME << ": Failed to save application." << endl;
+                        continueProcessing = sectionCompleted;
                     }
                 }
-                else {
-                    cout << Config::CHATBOT_NAME << ": Application submission cancelled." << endl;
+
+                if (applicationWasSubmitted || application.isApplicationComplete()) {
+                    cout << endl << "Application submitted! ID: " << application.getApplicationId() << endl;
+                    cout << endl << "Press any key to return to main menu...";
+                    getline(cin, userInput);
+                    return;
                 }
             }
             catch (const exception& e) {
@@ -397,11 +424,13 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
         }
 
         try {
-            LoanApplication application = collector.collectApplicationForLoan("car", "Car Loan");
+            // Create application (don't use old collector)
+            LoanApplication application;
 
             application.setLoanType("Car Loan");
             application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
 
+            // Get loan details from selected option
             string makeName = "Make " + makeInput;
             int currentOption = 0;
             bool loanFound = false;
@@ -425,24 +454,60 @@ void handleCarLoanSelection(const CarLoan loans[], int loanCount, bool& running,
                 return;
             }
 
-            displayApplicationDetails(application);
+            // Setup application
+            string appId = fileManager.generateApplicationId();
+            application.setApplicationId(appId);
+            application.setSubmissionDate(getCurrentDate());
+            application.setStatus("C1");
+            fileManager.updateApplicationSection(application, "");
 
-            cout << endl << Config::CHATBOT_NAME << ": Submit application? (Y/N): ";
-            getline(cin, userInput);
+            cout << endl << "Application created! ID: " << appId << endl;
 
-            if (toLower(trim(userInput)) == "y" || toLower(trim(userInput)) == "yes") {
-                if (fileManager.saveApplication(application)) {
-                    cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
-                    cout << "Your Application ID: " << application.getApplicationId() << endl;
-                    cout << endl << "----------------------------------------" << endl;
-                    cout << "Check status: Type 'check my applications'" << endl;
-                    cout << "CNIC: " << application.getCnicNumber() << endl;
-                    cout << "----------------------------------------" << endl;
+            // Use multi-session collector
+            MultiSessionCollector multiCollector(fileManager);
+            bool continueProcessing = true;
+            bool applicationWasSubmitted = false;
 
-                    cout << endl << "Press any key to return to main menu...";
-                    getline(cin, userInput);
-                    return;
+            while (continueProcessing && !application.isApplicationComplete() && !applicationWasSubmitted) {
+                string nextSection = application.getNextIncompleteSection();
+                if (nextSection == "complete") break;
+
+                bool sectionCompleted = false;
+                if (nextSection == "personal") sectionCompleted = multiCollector.collectPersonalInfo(application);
+                else if (nextSection == "financial") sectionCompleted = multiCollector.collectFinancialInfo(application);
+                else if (nextSection == "references") sectionCompleted = multiCollector.collectReferencesInfo(application);
+                else if (nextSection == "documents") {
+                    sectionCompleted = multiCollector.collectDocumentsInfo(application);
+                    if (sectionCompleted && application.getStatus() == "submitted") {
+                        applicationWasSubmitted = true;
+                        break;
+                    }
                 }
+
+                if (sectionCompleted && !applicationWasSubmitted) {
+                    if (application.getNextIncompleteSection() != "complete") {
+                        cout << endl << Config::CHATBOT_NAME << ": Continue to next section? (yes/no): ";
+                        string nextChoice;
+                        getline(cin, nextChoice);
+                        continueProcessing = (toLower(trim(nextChoice)) == "yes" || toLower(trim(nextChoice)) == "y");
+                        if (!continueProcessing) {
+                            cout << endl << "Progress saved! Application ID: " << appId << endl;
+                            cout << endl << "Press any key to return to main menu...";
+                            getline(cin, userInput);
+                            return;
+                        }
+                    }
+                }
+                else {
+                    continueProcessing = sectionCompleted;
+                }
+            }
+
+            if (applicationWasSubmitted || application.isApplicationComplete()) {
+                cout << endl << "Application submitted! ID: " << application.getApplicationId() << endl;
+                cout << endl << "Press any key to return to main menu...";
+                getline(cin, userInput);
+                return;
             }
         }
         catch (const exception& e) {
@@ -514,11 +579,13 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
         }
 
         try {
-            LoanApplication application = collector.collectApplicationForLoan("scooter", "Scooter Loan");
+            // Create application (don't use old collector)
+            LoanApplication application;
 
             application.setLoanType("Scooter Loan");
             application.setLoanCategory("Make " + makeInput + " - Option " + to_string(optionNumber));
 
+            // Get loan details from selected option
             string makeName = "Make " + makeInput;
             int currentOption = 0;
             bool loanFound = false;
@@ -542,24 +609,60 @@ void handleScooterLoanSelection(const ScooterLoan loans[], int loanCount, bool& 
                 return;
             }
 
-            displayApplicationDetails(application);
+            // Setup application
+            string appId = fileManager.generateApplicationId();
+            application.setApplicationId(appId);
+            application.setSubmissionDate(getCurrentDate());
+            application.setStatus("C1");
+            fileManager.updateApplicationSection(application, "");
 
-            cout << endl << Config::CHATBOT_NAME << ": Submit application? (Y/N): ";
-            getline(cin, userInput);
+            cout << endl << "Application created! ID: " << appId << endl;
 
-            if (toLower(trim(userInput)) == "y" || toLower(trim(userInput)) == "yes") {
-                if (fileManager.saveApplication(application)) {
-                    cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
-                    cout << "Application ID: " << application.getApplicationId() << endl;
-                    cout << endl << "----------------------------------------" << endl;
-                    cout << "Check status: Type 'check my applications'" << endl;
-                    cout << "CNIC: " << application.getCnicNumber() << endl;
-                    cout << "----------------------------------------" << endl;
+            // Use multi-session collector
+            MultiSessionCollector multiCollector(fileManager);
+            bool continueProcessing = true;
+            bool applicationWasSubmitted = false;
 
-                    cout << endl << "Press any key to return to main menu...";
-                    getline(cin, userInput);
-                    return;
+            while (continueProcessing && !application.isApplicationComplete() && !applicationWasSubmitted) {
+                string nextSection = application.getNextIncompleteSection();
+                if (nextSection == "complete") break;
+
+                bool sectionCompleted = false;
+                if (nextSection == "personal") sectionCompleted = multiCollector.collectPersonalInfo(application);
+                else if (nextSection == "financial") sectionCompleted = multiCollector.collectFinancialInfo(application);
+                else if (nextSection == "references") sectionCompleted = multiCollector.collectReferencesInfo(application);
+                else if (nextSection == "documents") {
+                    sectionCompleted = multiCollector.collectDocumentsInfo(application);
+                    if (sectionCompleted && application.getStatus() == "submitted") {
+                        applicationWasSubmitted = true;
+                        break;
+                    }
                 }
+
+                if (sectionCompleted && !applicationWasSubmitted) {
+                    if (application.getNextIncompleteSection() != "complete") {
+                        cout << endl << Config::CHATBOT_NAME << ": Continue to next section? (yes/no): ";
+                        string nextChoice;
+                        getline(cin, nextChoice);
+                        continueProcessing = (toLower(trim(nextChoice)) == "yes" || toLower(trim(nextChoice)) == "y");
+                        if (!continueProcessing) {
+                            cout << endl << "Progress saved! Application ID: " << appId << endl;
+                            cout << endl << "Press any key to return to main menu...";
+                            getline(cin, userInput);
+                            return;
+                        }
+                    }
+                }
+                else {
+                    continueProcessing = sectionCompleted;
+                }
+            }
+
+            if (applicationWasSubmitted || application.isApplicationComplete()) {
+                cout << endl << "Application submitted! ID: " << application.getApplicationId() << endl;
+                cout << endl << "Press any key to return to main menu...";
+                getline(cin, userInput);
+                return;
             }
         }
         catch (const exception& e) {
