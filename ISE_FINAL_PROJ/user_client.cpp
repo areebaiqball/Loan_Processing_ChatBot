@@ -1063,10 +1063,11 @@ PersonalLoanSelection selectPersonalLoanCategory(const PersonalLoan loans[], int
 void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
     const CarLoan carLoans[], int carLoanCount,
     const ScooterLoan scooterLoans[], int scooterLoanCount,
-    const PersonalLoan personalLoans[], int personalLoanCount,  // ADDED THIS PARAMETER
+    const PersonalLoan personalLoans[], int personalLoanCount,  // ✅ ADDED
     const Utterance utterances[], int utteranceCount,
     ApplicationCollector& collector, FileManager& fileManager) {
 
+    vector<ConversationPair> conversationCorpus = loadConversationCorpus("human_chat_corpus.txt");
     MultiSessionCollector multiSessionCollector(fileManager);
     bool running = true;
     string userInput;
@@ -1090,72 +1091,48 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 continue;
             }
 
+            // ============================================================
+            // ✅ OPTION 1: START NEW APPLICATION
+            // ============================================================
             if (lowerInput == "1" || lowerInput == "start new" || lowerInput == "new") {
-                // NEW LOAN APPLICATION FLOW
+                // ✅ SHOW LOAN CATEGORIES MENU
                 displayLoanCategories();
                 cout << "You: ";
-                getline(cin, userInput);
+
+                if (!getline(cin, userInput)) {
+                    running = false;
+                    break;
+                }
+
                 string loanChoice = toLower(trim(userInput));
 
+                // ✅ HOME LOAN SELECTION
                 if (loanChoice == "h" || loanChoice == "home") {
                     handleHomeLoanSelection(homeLoans, homeLoanCount, running, collector, fileManager);
                 }
+                // ✅ CAR LOAN SELECTION
                 else if (loanChoice == "c" || loanChoice == "car") {
                     handleCarLoanSelection(carLoans, carLoanCount, running, collector, fileManager);
                 }
+                // ✅ SCOOTER LOAN SELECTION
                 else if (loanChoice == "s" || loanChoice == "scooter") {
                     handleScooterLoanSelection(scooterLoans, scooterLoanCount, running, collector, fileManager);
                 }
+                // ✅ PERSONAL LOAN SELECTION
                 else if (loanChoice == "p" || loanChoice == "personal") {
-                    // UPDATED PERSONAL LOAN HANDLING WITH CATEGORIES
-                    PersonalLoanSelection selection = selectPersonalLoanCategory(personalLoans, personalLoanCount);
-
-                    if (selection.selected) {
-                        cout << endl << Config::CHATBOT_NAME << ": Ready to apply? (yes/no): ";
-                        string applyConfirm;
-                        getline(cin, applyConfirm);
-
-                        if (toLower(trim(applyConfirm)) == "yes" || toLower(trim(applyConfirm)) == "y") {
-                            try {
-                                LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan");
-
-                                // Set loan details from selected personal loan
-                                application.setLoanType("Personal Loan");
-                                application.setLoanCategory(selection.category + " - " + selection.purpose);
-                                application.setLoanAmount(selection.amount);
-                                application.setDownPayment(selection.downPayment);
-                                application.setInstallmentMonths(selection.installments);
-                                application.setMonthlyPayment((selection.amount - selection.downPayment) / selection.installments);
-
-                                displayApplicationDetails(application);
-
-                                cout << endl << Config::CHATBOT_NAME << ": Submit this application? (yes/no): ";
-                                string confirmSubmit;
-                                getline(cin, confirmSubmit);
-
-                                if (toLower(trim(confirmSubmit)) == "yes" || toLower(trim(confirmSubmit)) == "y") {
-                                    if (fileManager.saveApplication(application)) {
-                                        cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
-                                        cout << "Your Application ID: " << application.getApplicationId() << endl;
-                                        cout << "CNIC: " << application.getCnicNumber() << endl;
-                                        cout << endl << "Press Enter to continue...";
-                                        getline(cin, applyConfirm);
-                                    }
-                                }
-                            }
-                            catch (const exception& e) {
-                                cout << Config::CHATBOT_NAME << ": Application failed: " << e.what() << endl;
-                            }
-                        }
-                    }
+                    handlePersonalLoanSelection(personalLoans, personalLoanCount, running, collector, fileManager);
                 }
                 else if (loanChoice == "x" || loanChoice == "exit") {
-                    running = false;
+                    cout << Config::CHATBOT_NAME << ": Returning to main menu..." << endl;
                 }
                 else {
-                    cout << Config::CHATBOT_NAME << ": Invalid loan category selection." << endl;
+                    cout << Config::CHATBOT_NAME << ": Invalid loan category. Please try again." << endl;
                 }
             }
+
+            // ============================================================
+            // ✅ OPTION 2: RESUME INCOMPLETE APPLICATION
+            // ============================================================
             else if (lowerInput == "2" || lowerInput == "resume" || lowerInput == "continue") {
                 try {
                     multiSessionCollector.resumeExistingApplication();
@@ -1164,6 +1141,10 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                     cout << Config::CHATBOT_NAME << ": Sorry, an error occurred: " << e.what() << endl;
                 }
             }
+
+            // ============================================================
+            // ✅ OPTION 3: CHECK APPLICATION STATUS
+            // ============================================================
             else if (lowerInput == "3" || lowerInput == "check" || lowerInput == "status") {
                 try {
                     checkApplicationStatusByCNIC(fileManager);
@@ -1172,14 +1153,56 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                     cout << Config::CHATBOT_NAME << ": Sorry, an error occurred: " << e.what() << endl;
                 }
             }
-            else if (lowerInput == "4" || lowerInput == "exit" || lowerInput == "x") {
+
+            // ============================================================
+            // ✅ OPTION 4: GENERAL CHAT MODE
+            // ============================================================
+            else if (lowerInput == "4" || lowerInput == "chat" || lowerInput == "conversation") {
+                cout << Config::CHATBOT_NAME << ": I'm now in general conversation mode! Feel free to chat with me." << endl;
+                cout << "Type 'exit' to return to the main menu." << endl;
+
+                bool inChatMode = true;
+                while (inChatMode) {
+                    cout << "You: ";
+                    getline(cin, userInput);
+
+                    string chatInput = toLower(trim(userInput));
+
+                    if (chatInput == "exit" || chatInput == "quit" || chatInput == "back") {
+                        cout << Config::CHATBOT_NAME << ": Returning to main menu." << endl;
+                        inChatMode = false;
+                    }
+                    else if (!chatInput.empty()) {
+                        // Use IoU matching for response
+                        string response = getResponseByIoU(conversationCorpus, userInput);
+                        cout << Config::CHATBOT_NAME << ": " << response << endl;
+                    }
+                }
+            }
+
+            // ============================================================
+            // ✅ OPTION 5: EXIT
+            // ============================================================
+            else if (lowerInput == "5" || lowerInput == "exit" || lowerInput == "x") {
                 cout << Config::CHATBOT_NAME << ": Thank you for using our service. Goodbye!" << endl;
                 running = false;
             }
+
+            // ============================================================
+            // ✅ HANDLE NATURAL LANGUAGE INPUTS
+            // ============================================================
             else {
-                // Handle natural language inputs
+                // Try to match natural language inputs
                 if (lowerInput.find("new") != string::npos || lowerInput.find("apply") != string::npos) {
-                    multiSessionCollector.startNewApplication();
+                    displayLoanCategories();
+                    cout << "You: ";
+                    getline(cin, userInput);
+                    string loanChoice = toLower(trim(userInput));
+
+                    if (loanChoice == "h") handleHomeLoanSelection(homeLoans, homeLoanCount, running, collector, fileManager);
+                    else if (loanChoice == "c") handleCarLoanSelection(carLoans, carLoanCount, running, collector, fileManager);
+                    else if (loanChoice == "s") handleScooterLoanSelection(scooterLoans, scooterLoanCount, running, collector, fileManager);
+                    else if (loanChoice == "p") handlePersonalLoanSelection(personalLoans, personalLoanCount, running, collector, fileManager);
                 }
                 else if (lowerInput.find("resume") != string::npos || lowerInput.find("continue") != string::npos) {
                     multiSessionCollector.resumeExistingApplication();
@@ -1188,6 +1211,7 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                     checkApplicationStatusByCNIC(fileManager);
                 }
                 else {
+                    // Use utterances for general responses
                     string response = getResponse(utterances, utteranceCount, userInput);
                     cout << Config::CHATBOT_NAME << ": " << response << endl;
                 }
@@ -1195,6 +1219,8 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
         }
         catch (const exception& e) {
             cout << endl << "ERROR: " << e.what() << endl;
+            cout << Config::CHATBOT_NAME << ": Something went wrong. Let's start over." << endl;
+
             cin.clear();
             if (cin.fail()) {
                 cin.ignore(10000, '\n');
@@ -1202,6 +1228,8 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
         }
         catch (...) {
             cout << endl << "ERROR: Unknown error occurred" << endl;
+            cout << Config::CHATBOT_NAME << ": Something went wrong. Let's start over." << endl;
+
             cin.clear();
             if (cin.fail()) {
                 cin.ignore(10000, '\n');
@@ -1209,7 +1237,6 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
         }
     }
 }
-
 
 //int main() {
 //    // Initialize data

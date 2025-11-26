@@ -356,33 +356,88 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
         return false;
     }
 }
-
 bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
     cout << endl << "=== REFERENCES INFORMATION ===" << endl;
 
     try {
         cout << "We need information for two references." << endl;
 
-        cout << endl << "--- Reference 1 ---" << endl;
-        Reference ref1;
-        ref1.name = getValidatedString("Reference 1 full name: ", "Reference name", 1, 100); 
-        ref1.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 1 CNIC (13 digits without dashes): ");
-        ref1.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 1 CNIC issue date (DD-MM-YYYY): ");
-        ref1.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 1 phone number: ");
-        ref1.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 1 email address: ");
-        application.setReference1(ref1);
+        bool referencesValid = false;
+        int attemptCount = 0;
+        const int MAX_ATTEMPTS = 3;
 
-        cout << endl << "--- Reference 2 ---" << endl;
-        Reference ref2;
-        ref2.name = getValidatedString(Config::CHATBOT_NAME + ": Reference 2 full name: ", "Reference name", 1, 100);
-        ref2.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 2 CNIC (13 digits without dashes): ");
-        ref2.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 2 CNIC issue date (DD-MM-YYYY): ");
-        ref2.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 2 phone number: ");
-        ref2.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 2 email address: ");
-        application.setReference2(ref2);
+        while (!referencesValid && attemptCount < MAX_ATTEMPTS) {
+            attemptCount++;
 
-        cout << Config::CHATBOT_NAME << ": References information collected successfully!" << endl;
-        return true;
+            if (attemptCount > 1) {
+                cout << endl << "--- Please correct the reference information ---" << endl;
+            }
+
+            cout << endl << "--- Reference 1 ---" << endl;
+            Reference ref1;
+            ref1.name = getValidatedString("Reference 1 full name: ", "Reference name", 1, 100);
+            ref1.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 1 CNIC (13 digits without dashes): ");
+            ref1.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 1 CNIC issue date (DD-MM-YYYY): ");
+            ref1.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 1 phone number: ");
+            ref1.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 1 email address: ");
+
+            cout << endl << "--- Reference 2 ---" << endl;
+            Reference ref2;
+            ref2.name = getValidatedString(Config::CHATBOT_NAME + ": Reference 2 full name: ", "Reference name", 1, 100);
+
+            bool ref2CnicValid = false;
+            while (!ref2CnicValid) {
+                ref2.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 2 CNIC (13 digits without dashes): ");
+
+                if (ref2.cnic == ref1.cnic) {
+                    cout << endl << "❌ VALIDATION FAILED:" << endl;
+                    cout << "Reference 2 CNIC cannot be the same as Reference 1 CNIC!" << endl;
+                    cout << "Reference 1 CNIC: " << ref1.cnic << endl;
+                    cout << "Reference 2 CNIC: " << ref2.cnic << endl;
+                    cout << "Please enter a different CNIC for Reference 2." << endl << endl;
+                }
+                else {
+                    ref2CnicValid = true;
+                }
+            }
+
+            ref2.cnicIssueDate = getValidatedCNICIssueDate(Config::CHATBOT_NAME + ": Reference 2 CNIC issue date (DD-MM-YYYY): ");
+            ref2.phoneNumber = getValidatedPhone(Config::CHATBOT_NAME + ": Reference 2 phone number: ");
+            ref2.email = getValidatedEmail(Config::CHATBOT_NAME + ": Reference 2 email address: ");
+
+            bool ref1Valid = ref1.validate();
+            bool ref2Valid = ref2.validate();
+
+            if (!ref1Valid || !ref2Valid) {
+                cout << endl << "❌ VALIDATION FAILED:" << endl;
+                if (!ref1Valid) {
+                    cout << "Reference 1 has invalid data." << endl;
+                }
+                if (!ref2Valid) {
+                    cout << "Reference 2 has invalid data." << endl;
+                }
+
+                if (attemptCount < MAX_ATTEMPTS) {
+                    cout << "Please correct the reference information." << endl;
+                    continue;
+                }
+                else {
+                    cout << "Maximum attempts reached. Please try again later." << endl;
+                    return false;
+                }
+            }
+            application.setReference1(ref1);
+            application.setReference2(ref2);
+            referencesValid = true;
+        }
+
+        if (referencesValid) {
+            cout << Config::CHATBOT_NAME << ": References information collected successfully!" << endl;
+            return true;
+        }
+        else {
+            return false;
+        }
     }
     catch (const ValidationException& e) {
         cout << Config::CHATBOT_NAME << ": " << e.what() << endl;
@@ -393,6 +448,8 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
         return false;
     }
 }
+
+
 bool ApplicationCollector::confirmApplication(const LoanApplication& application) {
     cout << endl << "=== APPLICATION SUMMARY ===" << endl;
     cout << "Please review your information:" << endl << endl;
@@ -837,79 +894,155 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
         cout << "Please make sure the image files exist at the paths you provide." << endl;
         cout << "The images will be copied to the project's 'images' folder." << endl << endl;
 
-        cout << "--- CNIC Front Side ---" << endl;
-        string cnicFrontPath = getImagePath("CNIC Front Side");
-        application.setCnicFrontImagePath(cnicFrontPath);
+        bool documentsValid = false;
+        int attemptCount = 0;
+        const int MAX_ATTEMPTS = 3;
 
-        cout << "--- CNIC Back Side ---" << endl;
-        string cnicBackPath = getImagePath("CNIC Back Side");
-        application.setCnicBackImagePath(cnicBackPath);
+        while (!documentsValid && attemptCount < MAX_ATTEMPTS) {
+            attemptCount++;
 
-        cout << "--- Electricity Bill ---" << endl;
-        string electricityBillPath = getImagePath("Recent Electricity Bill");
-        application.setElectricityBillImagePath(electricityBillPath);
+            if (attemptCount > 1) {
+                cout << endl << "--- Attempt " << attemptCount << " - Please correct the document paths ---" << endl;
+            }
 
-        cout << "--- Salary Slip/Bank Statement ---" << endl;
-        string salarySlipPath = getImagePath("Salary Slip or Bank Statement");
-        application.setSalarySlipImagePath(salarySlipPath);
+            // CNIC Front Side
+            cout << "--- CNIC Front Side ---" << endl;
+            string cnicFrontPath = getImagePath("CNIC Front Side");
+            application.setCnicFrontImagePath(cnicFrontPath);
 
-        cout << Config::CHATBOT_NAME << ": " << "Document paths recorded successfully!" << endl;
-        cout << "Images will be copied to the 'images' folder when you submit the application." << endl;
-        return true;
+            // CNIC Back Side
+            cout << "--- CNIC Back Side ---" << endl;
+            string cnicBackPath = getImagePath("CNIC Back Side");
+            application.setCnicBackImagePath(cnicBackPath);
+
+            // Electricity Bill
+            cout << "--- Electricity Bill ---" << endl;
+            string electricityBillPath = getImagePath("Recent Electricity Bill");
+            application.setElectricityBillImagePath(electricityBillPath);
+
+            // Salary Slip/Bank Statement
+            cout << "--- Salary Slip/Bank Statement ---" << endl;
+            string salarySlipPath = getImagePath("Salary Slip or Bank Statement");
+            application.setSalarySlipImagePath(salarySlipPath);
+
+            // Simple validation - check if any paths are empty
+            if (application.getCnicFrontImagePath().empty() ||
+                application.getCnicBackImagePath().empty() ||
+                application.getElectricityBillImagePath().empty() ||
+                application.getSalarySlipImagePath().empty()) {
+
+                cout << endl << "❌ VALIDATION FAILED:" << endl;
+                cout << "  • Some required documents are missing" << endl;
+
+                if (application.getCnicFrontImagePath().empty())
+                    cout << "  • CNIC Front Side is required" << endl;
+                if (application.getCnicBackImagePath().empty())
+                    cout << "  • CNIC Back Side is required" << endl;
+                if (application.getElectricityBillImagePath().empty())
+                    cout << "  • Electricity Bill is required" << endl;
+                if (application.getSalarySlipImagePath().empty())
+                    cout << "  • Salary Slip/Bank Statement is required" << endl;
+
+                if (attemptCount < MAX_ATTEMPTS) {
+                    cout << endl << Config::CHATBOT_NAME << ": Please provide all required documents." << endl;
+                    // Continue the loop to try again
+                    continue;
+                }
+                else {
+                    cout << endl << Config::CHATBOT_NAME << ": Maximum attempts reached. Please complete documents later." << endl;
+                    // Don't mark as completed if documents are missing
+                    return false;
+                }
+            }
+
+            documentsValid = true;
+        }
+
+        if (documentsValid) {
+            cout << endl << "✓ " << Config::CHATBOT_NAME << ": " << "All documents uploaded successfully!" << endl;
+            application.markSectionCompleted("documents");
+            return true;
+        }
+        else {
+            cout << endl << Config::CHATBOT_NAME << ": Document upload incomplete. You can complete it later." << endl;
+            return false;
+        }
     }
     catch (const exception& e) {
         cout << Config::CHATBOT_NAME << ": " << "Error in document information: " << e.what() << endl;
         return false;
     }
 }
-
 string ApplicationCollector::getImagePath(const string& imageType) {
-    while (true) {
+    int attemptCount = 0;
+    const int MAX_ATTEMPTS = 3;
+
+    while (attemptCount < MAX_ATTEMPTS) {
+        attemptCount++;
+
         cout << endl;
         cout << "========================================" << endl;
-        cout << "  " << imageType << endl;
+        cout << "  " << imageType << " (Attempt " << attemptCount << " of " << MAX_ATTEMPTS << ")" << endl;
         cout << "========================================" << endl;
         cout << Config::CHATBOT_NAME << ": Please enter the file path for " << imageType << endl;
         cout << endl;
-     
         cout << "  • This must be from your ORIGINAL location on your computer" << endl;
-       
- 
-       
+        cout << "  • Example: C:\\Users\\YourName\\Pictures\\document.jpg" << endl;
+        cout << "  • Or: /home/user/documents/file.png" << endl;
+        cout << endl;
         cout << "File path: ";
 
         string path;
         getline(cin, path);
         path = trim(path);
 
+        if (path.empty()) {
+            cout << Config::CHATBOT_NAME << ": No path provided. Skipping this document." << endl;
+            return "";
+        }
+
+        // Convert backslashes to forward slashes for consistency
         for (char& c : path) {
             if (c == '\\') c = '/';
         }
 
+        // Check if file exists
         ifstream testFile(path, ios::binary | ios::ate);
         if (!testFile.is_open()) {
-            cout << endl << " ERROR: Cannot find file at this location" << endl;
-            cout << "Path: " << path << endl;
-            cout << "Please check the path and try again." << endl;
-            cout << endl;
-            continue;
+            cout << endl << "❌ ERROR: Cannot find file at this location" << endl;
+            cout << "Path tried: " << path << endl;
+
+            if (attemptCount < MAX_ATTEMPTS) {
+                cout << "Please check the path and try again." << endl;
+                continue;
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": Maximum attempts reached. Skipping this document." << endl;
+                return "";
+            }
         }
 
         streamsize fileSize = testFile.tellg();
         testFile.close();
 
         if (fileSize == 0) {
-            cout << endl << " ERROR: File is empty (0 bytes)" << endl;
-            cout << "Please select a file with content." << endl;
-            cout << endl;
-            continue;
+            cout << endl << "❌ ERROR: File is empty (0 bytes)" << endl;
+            if (attemptCount < MAX_ATTEMPTS) {
+                cout << "Please select a file with content." << endl;
+                continue;
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": Maximum attempts reached. Skipping this document." << endl;
+                return "";
+            }
         }
 
         cout << endl << "✓ File found and validated!" << endl;
         cout << "File size: " << fileSize << " bytes" << endl;
-        cout << endl;
-        return path;
+        return path; // SUCCESS
     }
+
+    return ""; // If all attempts failed
 }
 
 bool ApplicationCollector::collectReferenceDocuments(LoanApplication& application) {

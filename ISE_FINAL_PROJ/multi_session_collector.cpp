@@ -168,7 +168,6 @@ void MultiSessionCollector::startNewApplication() {
             loanDetails = "Personal Loan";
             cout << Config::CHATBOT_NAME << ": Personal loans offer great flexibility!" << endl;
 
-            // ADD PERSONAL LOAN CATEGORY SELECTION
             cout << endl << Config::CHATBOT_NAME << ": What type of personal loan do you need?" << endl;
             cout << "1. Standard Personal Loan - For any personal needs" << endl;
             cout << "2. Education Loan - For tuition and educational expenses" << endl;
@@ -228,37 +227,17 @@ void MultiSessionCollector::startNewApplication() {
         }
 
         if (toLower(trim(ready)) == "yes" || toLower(trim(ready)) == "y") {
-            // Start the multi-section collection flow
-            bool continueProcessing = true;
+            // Start with personal information only
+            bool continueProcessing = collectPersonalInfo(application);
 
-            // Personal Information
             if (continueProcessing) {
-                continueProcessing = collectPersonalInfo(application);
-            }
-
-            // Financial Information (if user chose to continue)
-            if (continueProcessing) {
-                // Reload application to get latest data
-                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
-                if (!updatedApp.getApplicationId().empty()) {
-                    continueProcessing = collectFinancialInfo(updatedApp);
-                }
-            }
-
-            // References (if user chose to continue)
-            if (continueProcessing) {
-                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
-                if (!updatedApp.getApplicationId().empty()) {
-                    continueProcessing = collectReferencesInfo(updatedApp);
-                }
-            }
-
-            // Documents (if user chose to continue)
-            if (continueProcessing) {
-                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
-                if (!updatedApp.getApplicationId().empty()) {
-                    continueProcessing = collectDocumentsInfo(updatedApp);
-                }
+                cout << endl << "========================================" << endl;
+                cout << "   APPLICATION PROGRESS SAVED" << endl;
+                cout << "========================================" << endl;
+                cout << Config::CHATBOT_NAME << ": Great start! Your application progress has been saved." << endl;
+                cout << "To continue, select 'Continue my incomplete application' from the main menu." << endl;
+                cout << "You'll need your Application ID: " << appId << endl;
+                cout << "========================================" << endl;
             }
         }
         else {
@@ -272,7 +251,6 @@ void MultiSessionCollector::startNewApplication() {
         cout << Config::CHATBOT_NAME << ": Returning to main menu." << endl;
     }
 }
-
 void MultiSessionCollector::resumeExistingApplication() {
     cout << endl << "========================================" << endl;
     cout << "   RESUME YOUR APPLICATION" << endl;
@@ -327,6 +305,19 @@ void MultiSessionCollector::resumeExistingApplication() {
         return;
     }
 
+    // ADD THIS CHECK - If application is already submitted, don't proceed
+    if (application.isApplicationComplete() || application.getStatus() == "submitted") {
+        cout << endl << "========================================" << endl;
+        cout << "   APPLICATION ALREADY SUBMITTED" << endl;
+        cout << "========================================" << endl;
+        cout << Config::CHATBOT_NAME << ": Your application is already submitted!" << endl;
+        cout << "Application ID: " << application.getApplicationId() << endl;
+        cout << "Status: " << application.getStatus() << endl;
+        cout << "Submission Date: " << application.getSubmissionDate() << endl;
+        cout << Config::CHATBOT_NAME << ": No further action is needed." << endl;
+        return;
+    }
+
     cout << Config::CHATBOT_NAME << ": Found it!" << endl;
     displayApplicationProgress(application);
 
@@ -340,34 +331,61 @@ void MultiSessionCollector::resumeExistingApplication() {
     }
 
     bool continueProcessing = true;
-    while (continueProcessing && !application.isApplicationComplete()) {
+    bool applicationWasSubmitted = false; // ADD THIS FLAG
+
+    while (continueProcessing && !application.isApplicationComplete() && !applicationWasSubmitted) {
         string nextSection = application.getNextIncompleteSection();
         cout << endl << "========================================" << endl;
         cout << "   SECTION: " << getSectionDisplayName(nextSection) << endl;
         cout << "========================================" << endl;
 
+        bool sectionCompleted = false;
+
         if (nextSection == "personal") {
-            continueProcessing = collectPersonalInfo(application);
+            sectionCompleted = collectPersonalInfo(application);
         }
         else if (nextSection == "financial") {
-            continueProcessing = collectFinancialInfo(application);
+            sectionCompleted = collectFinancialInfo(application);
         }
         else if (nextSection == "references") {
-            continueProcessing = collectReferencesInfo(application);
+            sectionCompleted = collectReferencesInfo(application);
         }
         else if (nextSection == "documents") {
-            continueProcessing = collectDocumentsInfo(application);
+            sectionCompleted = collectDocumentsInfo(application);
+            // ADD THIS CHECK - If documents were submitted, stop the loop
+            if (sectionCompleted && application.getStatus() == "submitted") {
+                applicationWasSubmitted = true;
+                break; // Exit the loop immediately
+            }
         }
         else {
             break;
         }
 
-        if (continueProcessing) {
-            application = fileManager.findIncompleteApplication(applicationId, cnic);
+        if (sectionCompleted && !applicationWasSubmitted) {
+            // Reload application to get updated status, but only if not submitted
+            LoanApplication updatedApp = fileManager.findIncompleteApplication(applicationId, cnic);
+            if (!updatedApp.getApplicationId().empty()) {
+                application = updatedApp;
+            }
+
+            // Check if user wants to continue to next section
+            if (application.getNextIncompleteSection() != "complete") {
+                cout << endl << Config::CHATBOT_NAME << ": Continue to next section? (yes/no): ";
+                string nextChoice;
+                getline(cin, nextChoice);
+                continueProcessing = (toLower(trim(nextChoice)) == "yes" || toLower(trim(nextChoice)) == "y");
+            }
+            else {
+                continueProcessing = false;
+            }
+        }
+        else {
+            continueProcessing = sectionCompleted;
         }
     }
 
-    if (application.isApplicationComplete()) {
+    if (applicationWasSubmitted || application.isApplicationComplete()) {
         cout << endl << "========================================" << endl;
         cout << "   CONGRATULATIONS!" << endl;
         cout << "========================================" << endl;
@@ -597,8 +615,13 @@ bool MultiSessionCollector::collectReferencesInfo(LoanApplication& application) 
         return false;
     }
 }
-
 bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
+    // Check if application is already submitted
+    if (application.isApplicationComplete() || application.getStatus() == "submitted") {
+        cout << Config::CHATBOT_NAME << ": Your application is already submitted!" << endl;
+        return true;
+    }
+
     cout << endl << Config::CHATBOT_NAME << ": Finally, we need some document scans/photos." << endl;
     cout << Config::CHATBOT_NAME << ": Please provide the file paths from your computer." << endl << endl;
 
@@ -619,9 +642,14 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
         if (!validation.isValid) {
             cout << endl << Config::CHATBOT_NAME << ": Missing documents:" << endl;
             cout << validation.getReport();
+
+            // Don't submit if documents are invalid
+            application.setStatus("incomplete_documents");
+            fileManager.updateApplicationSection(application, "documents");
             return false;
         }
 
+        // All documents are valid - submit the application
         application.setStatus("submitted");
         if (application.getSubmissionDate().empty()) {
             application.setSubmissionDate(getCurrentDate());
@@ -678,8 +706,8 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
 
         displayApplicationProgress(application);
 
+        // Only ask for continuation for non-document sections
         if (section != "documents") {
-            // KEEP THE USER PROMPT - This is required behavior
             cout << endl << Config::CHATBOT_NAME << ": What would you like to do?" << endl;
             cout << "1. Continue to next section" << endl;
             cout << "2. Save and exit (I'll come back later)" << endl;
@@ -695,14 +723,10 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
                 cout << "  Application ID: " << application.getApplicationId() << endl;
                 cout << "  Your CNIC: " << application.getCnicNumber() << endl;
                 cout << Config::CHATBOT_NAME << ": See you soon!" << endl;
-                return false; // Return false to stop the flow
-            }
-            else if (choice == "1") {
-                return true; // Return true to continue
+                return false;
             }
             else {
-                cout << Config::CHATBOT_NAME << ": Invalid choice. Continuing to next section." << endl;
-                return true; // Default to continue
+                return true;
             }
         }
         return true;

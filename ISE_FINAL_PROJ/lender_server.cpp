@@ -93,63 +93,107 @@ void reviewAndProcessApplications(FileManager& fileManager) {
         return;
     }
 
-    cout << endl << "========== PENDING APPLICATIONS ==========" << endl;
-    for (size_t i = 0; i < pendingApps.size(); i++) {
-        cout << (i + 1) << ". ID: " << pendingApps[i].getApplicationId()
-            << " | " << pendingApps[i].getFullName() << endl;
-    }
+    bool reviewing = true;
 
-    cout << endl << "Enter application number to review: ";
-    string input;
-    getline(cin, input);
-
-    try {
-        int appNum = stoi(input);
-        if (appNum < 1 || appNum > static_cast<int>(pendingApps.size())) {
-            cout << "Invalid number." << endl;
-            return;
+    while (reviewing) {
+        cout << endl << "========== PENDING APPLICATIONS ==========" << endl;
+        for (size_t i = 0; i < pendingApps.size(); i++) {
+            cout << (i + 1) << ". ID: " << pendingApps[i].getApplicationId()
+                << " | " << pendingApps[i].getFullName() << endl;
         }
 
-        LoanApplication selectedApp = pendingApps[appNum - 1];
-        LoanApplication fullApp = fileManager.findApplicationById(selectedApp.getApplicationId());
-
-        displayApplicationDetails(fullApp);
-
-        cout << endl << "Action: (A)pprove or (R)eject? ";
-        getline(cin, input);
-        input = toLower(trim(input));
-
-        string newStatus;
-        string rejectionReason = "";
-
-        if (input == "a" || input == "approve") {
-            newStatus = "approved";
-            cout << " Application APPROVED." << endl;
-        }
-        else if (input == "r" || input == "reject") {
-            newStatus = "rejected";
-            cout << "Enter rejection reason: ";
-            getline(cin, rejectionReason);
-        }
-        else {
-            cout << "Invalid action." << endl;
-            return;
-        }
-
-        cout << "Confirm? (Y/N): ";
+        cout << endl << "Enter application number to review (or '0' to go back): ";
+        string input;
         getline(cin, input);
 
-        if (toLower(trim(input)) == "y") {
-            if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus, rejectionReason)) {
-                cout << " Status updated!" << endl;
+        // Check if user wants to go back
+        if (input == "0") {
+            reviewing = false;
+            continue;
+        }
+
+        try {
+            int appNum = stoi(input);
+            if (appNum < 1 || appNum > static_cast<int>(pendingApps.size())) {
+                cout << "Invalid number. Please enter a valid application number from the list." << endl;
+                continue; // Continue the loop to ask again
             }
+
+            LoanApplication selectedApp = pendingApps[appNum - 1];
+            LoanApplication fullApp = fileManager.findApplicationById(selectedApp.getApplicationId());
+
+            displayApplicationDetails(fullApp);
+
+            // Handle approval/rejection
+            bool actionCompleted = false;
+            while (!actionCompleted) {
+                cout << endl << "Action: (A)pprove, (R)eject, or (B)ack to list? ";
+                getline(cin, input);
+                input = toLower(trim(input));
+
+                string newStatus;
+                string rejectionReason = "";
+
+                if (input == "a" || input == "approve") {
+                    newStatus = "approved";
+                    cout << " Application APPROVED." << endl;
+
+                    cout << "Confirm? (Y/N): ";
+                    getline(cin, input);
+
+                    if (toLower(trim(input)) == "y") {
+                        if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus, rejectionReason)) {
+                            cout << " Status updated!" << endl;
+                            // Remove from pending apps since it's processed
+                            pendingApps.erase(pendingApps.begin() + (appNum - 1));
+                        }
+                        actionCompleted = true;
+                    }
+                    else {
+                        cout << "Approval cancelled." << endl;
+                        actionCompleted = true;
+                    }
+                }
+                else if (input == "r" || input == "reject") {
+                    newStatus = "rejected";
+                    cout << "Enter rejection reason: ";
+                    getline(cin, rejectionReason);
+
+                    cout << "Confirm rejection? (Y/N): ";
+                    getline(cin, input);
+
+                    if (toLower(trim(input)) == "y") {
+                        if (fileManager.updateApplicationStatus(fullApp.getApplicationId(), newStatus, rejectionReason)) {
+                            cout << " Application REJECTED." << endl;
+                           
+                            pendingApps.erase(pendingApps.begin() + (appNum - 1));
+                        }
+                        actionCompleted = true;
+                    }
+                    else {
+                        cout << "Rejection cancelled." << endl;
+                        actionCompleted = true;
+                    }
+                }
+                else if (input == "b" || input == "back") {
+                    actionCompleted = true; 
+                }
+                else {
+                    cout << "Invalid action. Please enter A, R, or B." << endl;
+                }
+            }
+
+            if (pendingApps.empty()) {
+                cout << endl << "No more pending applications." << endl;
+                reviewing = false;
+            }
+
         }
-    }
-    catch (const exception& e) {
-        cout << "Error: " << e.what() << endl;
+        catch (const exception& e) {
+            cout << "Invalid input. Please enter a valid number." << endl;
+        }
     }
 }
-
 void displayApplicationStatistics(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
     int submitted = 0, approved = 0, rejected = 0;
