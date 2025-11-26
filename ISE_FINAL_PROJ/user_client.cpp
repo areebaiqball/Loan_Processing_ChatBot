@@ -619,7 +619,6 @@ void handlePersonalLoanSelection(bool& running, ApplicationCollector& collector,
     }
 }
 // SE Principles: Data filtering, Search operations
-
 void checkApplicationStatusByCNIC(FileManager& fileManager) {
     bool keepChecking = true;
 
@@ -907,12 +906,6 @@ void handlePersonalLoanSelection(const PersonalLoan loans[], int loanCount, bool
 }
 
 
-// ============================================================
-// ADD THIS FUNCTION TO user_client.cpp
-// ============================================================
-// This function allows user to select a personal loan category
-// and returns the selected loan details
-
 struct PersonalLoanSelection {
     bool selected;
     string category;
@@ -1055,15 +1048,12 @@ PersonalLoanSelection selectPersonalLoanCategory(const PersonalLoan loans[], int
 
     return result;
 }
-// ============================================================
-// UPDATE THE handleUserMode FUNCTION - Change this part:
-// ============================================================
-// Replace the old handleUserMode signature and beginning with:
+
 
 void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
     const CarLoan carLoans[], int carLoanCount,
     const ScooterLoan scooterLoans[], int scooterLoanCount,
-    const PersonalLoan personalLoans[], int personalLoanCount,  // ✅ ADDED
+    const PersonalLoan personalLoans[], int personalLoanCount, 
     const Utterance utterances[], int utteranceCount,
     ApplicationCollector& collector, FileManager& fileManager) {
 
@@ -1091,11 +1081,7 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 continue;
             }
 
-            // ============================================================
-            // ✅ OPTION 1: START NEW APPLICATION
-            // ============================================================
             if (lowerInput == "1" || lowerInput == "start new" || lowerInput == "new") {
-                // ✅ SHOW LOAN CATEGORIES MENU
                 displayLoanCategories();
                 cout << "You: ";
 
@@ -1106,19 +1092,15 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
 
                 string loanChoice = toLower(trim(userInput));
 
-                // ✅ HOME LOAN SELECTION
                 if (loanChoice == "h" || loanChoice == "home") {
                     handleHomeLoanSelection(homeLoans, homeLoanCount, running, collector, fileManager);
                 }
-                // ✅ CAR LOAN SELECTION
                 else if (loanChoice == "c" || loanChoice == "car") {
                     handleCarLoanSelection(carLoans, carLoanCount, running, collector, fileManager);
                 }
-                // ✅ SCOOTER LOAN SELECTION
                 else if (loanChoice == "s" || loanChoice == "scooter") {
                     handleScooterLoanSelection(scooterLoans, scooterLoanCount, running, collector, fileManager);
                 }
-                // ✅ PERSONAL LOAN SELECTION
                 else if (loanChoice == "p" || loanChoice == "personal") {
                     handlePersonalLoanSelection(personalLoans, personalLoanCount, running, collector, fileManager);
                 }
@@ -1130,9 +1112,7 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 }
             }
 
-            // ============================================================
-            // ✅ OPTION 2: RESUME INCOMPLETE APPLICATION
-            // ============================================================
+        
             else if (lowerInput == "2" || lowerInput == "resume" || lowerInput == "continue") {
                 try {
                     multiSessionCollector.resumeExistingApplication();
@@ -1142,9 +1122,6 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 }
             }
 
-            // ============================================================
-            // ✅ OPTION 3: CHECK APPLICATION STATUS
-            // ============================================================
             else if (lowerInput == "3" || lowerInput == "check" || lowerInput == "status") {
                 try {
                     checkApplicationStatusByCNIC(fileManager);
@@ -1154,9 +1131,6 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 }
             }
 
-            // ============================================================
-            // ✅ OPTION 4: GENERAL CHAT MODE
-            // ============================================================
             else if (lowerInput == "4" || lowerInput == "chat" || lowerInput == "conversation") {
                 cout << Config::CHATBOT_NAME << ": I'm now in general conversation mode! Feel free to chat with me." << endl;
                 cout << "Type 'exit' to return to the main menu." << endl;
@@ -1180,17 +1154,11 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                 }
             }
 
-            // ============================================================
-            // ✅ OPTION 5: EXIT
-            // ============================================================
             else if (lowerInput == "5" || lowerInput == "exit" || lowerInput == "x") {
                 cout << Config::CHATBOT_NAME << ": Thank you for using our service. Goodbye!" << endl;
                 running = false;
             }
 
-            // ============================================================
-            // ✅ HANDLE NATURAL LANGUAGE INPUTS
-            // ============================================================
             else {
                 // Try to match natural language inputs
                 if (lowerInput.find("new") != string::npos || lowerInput.find("apply") != string::npos) {
@@ -1237,30 +1205,3 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
         }
     }
 }
-
-//int main() {
-//    // Initialize data
-//    Utterance utterances[Config::MAX_UTTERANCES];
-//    HomeLoan homeLoans[Config::MAX_LOANS];
-//    CarLoan carLoans[Config::MAX_LOANS];
-//    ScooterLoan scooterLoans[Config::MAX_LOANS];
-//    FileManager fileManager;
-//    ApplicationCollector collector;
-//
-//    int utteranceCount = loadUtterances(utterances, Config::MAX_UTTERANCES, Config::UTTERANCES_FILE);
-//    int homeLoanCount = loadHomeLoans(homeLoans, Config::MAX_LOANS, Config::HOME_LOANS_FILE);
-//    int carLoanCount = loadCarLoans(carLoans, Config::MAX_LOANS, Config::CAR_LOANS_FILE);
-//    int scooterLoanCount = loadScooterLoans(scooterLoans, Config::MAX_LOANS, Config::SCOOTER_LOANS_FILE);
-//  int personalLoanCount = loadPersonalLoans(personalLoans, Config::MAX_LOANS, Config::PERSONAL_LOANS_FILE);
-//
-//    cout << "╔════════════════════════════════════╗" << endl;
-//    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
-//    cout << "║   USER CLIENT                      ║" << endl;
-//    cout << "╚════════════════════════════════════╝" << endl;
-//
-//   handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
-//         scooterLoans, scooterLoanCount, personalLoans, personalLoanCount,  
-//         utterances, utteranceCount,
-//         collector, fileManager);
-//    return 0;
-//}

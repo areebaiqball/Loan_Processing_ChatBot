@@ -1,7 +1,5 @@
 ﻿#include <iostream>
 #include <string>
-#include <thread>
-#include "network_utils.h"
 #include "file_manager.h"
 #include "application.h"
 #include "utilities.h"
@@ -235,8 +233,7 @@ void handleLenderCommands(FileManager& fileManager) {
     bool running = true;
     string input;
 
-    cout << endl << "" << endl;
-    cout << "  LENDER INTERFACE STARTED      " << endl;
+    cout << endl << "" ;
     cout << "" << endl;
 
     while (running) {
@@ -281,16 +278,3 @@ void handleLenderCommands(FileManager& fileManager) {
 
     cout << "Lender interface closed." << endl;
 }
-//
-//int main() {
-//    FileManager fileManager;
-//
-//    cout << "╔════════════════════════════════════╗" << endl;
-//    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
-//    cout << "║   LENDER SERVER                    ║" << endl;
-//    cout << "╚════════════════════════════════════╝" << endl;
-//
-//    handleLenderCommands(fileManager);
-//
-//    return 0;
-//}

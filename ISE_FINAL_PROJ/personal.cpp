@@ -176,7 +176,6 @@ vector<string> getPersonalLoanCategories(const PersonalLoan loans[], int size) {
     for (int i = 0; i < size; i++) {
         string cat = loans[i].getCategory();
 
-        // Manually check if category already exists (no algorithm library)
         bool found = false;
         for (size_t j = 0; j < categories.size(); j++) {
             if (categories[j] == cat) {
@@ -190,7 +189,6 @@ vector<string> getPersonalLoanCategories(const PersonalLoan loans[], int size) {
         }
     }
 
-    // Manual bubble sort (no algorithm library)
     for (size_t i = 0; i < categories.size(); i++) {
         for (size_t j = i + 1; j < categories.size(); j++) {
             if (categories[i] > categories[j]) {

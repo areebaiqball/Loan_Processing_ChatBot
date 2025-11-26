@@ -123,7 +123,7 @@ bool FileManager::copyImageFile(const string& sourcePath, const string& destinat
         return false;
     }
 
-    cout << "✓ Image copied successfully: " << destinationPath
+    cout << " Image copied successfully: " << destinationPath
         << " (" << destSize << " bytes)" << endl;
     return true;
 }
@@ -276,7 +276,7 @@ bool FileManager::saveApplication(LoanApplication& application) {
             << application.getSalarySlipImagePath() << endl;
 
         file.close();
-        cout << "✓ Application saved successfully with ID: " << application.getApplicationId() << endl;
+        cout << "Application saved successfully with ID: " << application.getApplicationId() << endl;
         cout << "Submission Date: " << application.getSubmissionDate() << endl;
         return true;
 
@@ -944,7 +944,7 @@ bool FileManager::updateApplicationSection(const LoanApplication& application, c
     outFile.close();
 
     if (!section.empty()) {
-        cout << "✓ Progress saved at checkpoint: " << section << endl;
+        cout << "Progress saved at checkpoint: " << section << endl;
     }
     return true;
 } 

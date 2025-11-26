@@ -1,7 +1,5 @@
 ﻿#include <iostream>
 #include <string>
-#include <thread>
-#include "network_utils.h"
 #include "file_manager.h"
 #include "application.h"
 #include "utilities.h"
@@ -15,10 +13,8 @@ void handleLenderCommands(FileManager& fileManager);
 int main() {
     FileManager fileManager;
 
-    cout << "╔════════════════════════════════════╗" << endl;
-    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
-    cout << "║   LENDER SERVER                    ║" << endl;
-    cout << "╚════════════════════════════════════╝" << endl;
+    cout << endl<<"LOAN PROCESSING SYSTEM           " << endl;
+    cout << endl<<"LENDER SERVER                    " << endl<<endl;
 
     handleLenderCommands(fileManager);
 

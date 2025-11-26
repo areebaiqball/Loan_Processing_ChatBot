@@ -7,7 +7,6 @@
 #include <cctype>
 #include <ctime>
 #include <sstream>
-#include <unordered_set>
 #include <fstream>
 using namespace std;
 
@@ -192,7 +191,6 @@ inline vector<string> tokenize(const string& text) {
     vector<string> tokens;
     istringstream iss(text);
     string token;
-
     while (iss >> token) {
         // Convert to lowercase and remove punctuation
         string cleanToken;
@@ -208,6 +206,19 @@ inline vector<string> tokenize(const string& text) {
     return tokens;
 }
 
+// Utility to get unique tokens in a vector
+inline vector<string> uniqueTokens(const vector<string>& tokens) {
+    vector<string> uniq;
+    for (const string& t : tokens) {
+        bool found = false;
+        for (const string& u : uniq) {
+            if (u == t) { found = true; break; }
+        }
+        if (!found) uniq.push_back(t);
+    }
+    return uniq;
+}
+
 /// <summary>
 /// Calculates Intersection over Union (IoU) between two strings
 /// </summary>
@@ -215,28 +226,29 @@ inline vector<string> tokenize(const string& text) {
 /// <param name="text2">Second text to compare</param>
 /// <returns>IoU score between 0.0 and 1.0</returns>
 inline double calculateIoU(const string& text1, const string& text2) {
-    auto tokens1 = tokenize(text1);
-    auto tokens2 = tokenize(text2);
+    auto tokens1 = uniqueTokens(tokenize(text1));
+    auto tokens2 = uniqueTokens(tokenize(text2));
 
-    unordered_set<string> set1(tokens1.begin(), tokens1.end());
-    unordered_set<string> set2(tokens2.begin(), tokens2.end());
-
-    // Calculate intersection
     int intersection = 0;
-    for (const auto& token : set1) {
-        if (set2.find(token) != set2.end()) {
-            intersection++;
+    for (const auto& t1 : tokens1) {
+        for (const auto& t2 : tokens2) {
+            if (t1 == t2) {
+                intersection++;
+                break;
+            }
         }
     }
 
-    // Calculate union
-    unordered_set<string> unionSet;
-    unionSet.insert(set1.begin(), set1.end());
-    unionSet.insert(set2.begin(), set2.end());
-    int unionSize = unionSet.size();
+    int unionSize = tokens1.size();
+    for (const auto& t2 : tokens2) {
+        bool already = false;
+        for (const auto& t1 : tokens1) {
+            if (t2 == t1) { already = true; break; }
+        }
+        if (!already) unionSize++;
+    }
 
     if (unionSize == 0) return 0.0;
-
     return static_cast<double>(intersection) / unionSize;
 }
 

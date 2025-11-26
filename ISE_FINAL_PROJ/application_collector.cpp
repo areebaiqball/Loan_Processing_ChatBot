@@ -328,7 +328,7 @@ bool ApplicationCollector::collectExistingLoansInfo(LoanApplication& application
                 }
 
                 application.addExistingLoan(loan);
-                cout << Config::CHATBOT_NAME << ": " << "✓ Loan #" << loanCount << " recorded successfully!" << endl;
+                cout << Config::CHATBOT_NAME << ": " << " Loan #" << loanCount << " recorded successfully!" << endl;
 
                 if (loanCount < 10) {
                     cout << Config::CHATBOT_NAME << ": " << "Do you have another existing loan to add? (yes/no): ";
@@ -390,7 +390,7 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
                 ref2.cnic = getValidatedCNIC(Config::CHATBOT_NAME + ": Reference 2 CNIC (13 digits without dashes): ");
 
                 if (ref2.cnic == ref1.cnic) {
-                    cout << endl << "❌ VALIDATION FAILED:" << endl;
+                    cout << endl << "VALIDATION FAILED:" << endl;
                     cout << "Reference 2 CNIC cannot be the same as Reference 1 CNIC!" << endl;
                     cout << "Reference 1 CNIC: " << ref1.cnic << endl;
                     cout << "Reference 2 CNIC: " << ref2.cnic << endl;
@@ -409,7 +409,7 @@ bool ApplicationCollector::collectReferencesInfo(LoanApplication& application) {
             bool ref2Valid = ref2.validate();
 
             if (!ref1Valid || !ref2Valid) {
-                cout << endl << "❌ VALIDATION FAILED:" << endl;
+                cout << endl << "VALIDATION FAILED:" << endl;
                 if (!ref1Valid) {
                     cout << "Reference 1 has invalid data." << endl;
                 }
@@ -693,7 +693,7 @@ string ApplicationCollector::getValidatedCNICExpiryDate(const string& prompt) {
 
             if (comparison <= 0) {
                 cout << endl << "========================================" << endl;
-                cout << "❌ CNIC EXPIRED" << endl;
+                cout << "   CNIC EXPIRED" << endl;
                 cout << "========================================" << endl;
                 cout << "Your CNIC has expired or is expired today." << endl;
                 cout << "Current date: " << currentDate << endl;
@@ -931,7 +931,7 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
                 application.getElectricityBillImagePath().empty() ||
                 application.getSalarySlipImagePath().empty()) {
 
-                cout << endl << "❌ VALIDATION FAILED:" << endl;
+                cout << endl << "  VALIDATION FAILED:" << endl;
                 cout << "  • Some required documents are missing" << endl;
 
                 if (application.getCnicFrontImagePath().empty())
@@ -959,7 +959,7 @@ bool ApplicationCollector::collectImagePaths(LoanApplication& application) {
         }
 
         if (documentsValid) {
-            cout << endl << "✓ " << Config::CHATBOT_NAME << ": " << "All documents uploaded successfully!" << endl;
+            cout << endl << Config::CHATBOT_NAME << ": " << "All documents uploaded successfully!" << endl;
             application.markSectionCompleted("documents");
             return true;
         }
@@ -1009,7 +1009,7 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         // Check if file exists
         ifstream testFile(path, ios::binary | ios::ate);
         if (!testFile.is_open()) {
-            cout << endl << "❌ ERROR: Cannot find file at this location" << endl;
+            cout << endl << "ERROR: Cannot find file at this location" << endl;
             cout << "Path tried: " << path << endl;
 
             if (attemptCount < MAX_ATTEMPTS) {
@@ -1026,7 +1026,7 @@ string ApplicationCollector::getImagePath(const string& imageType) {
         testFile.close();
 
         if (fileSize == 0) {
-            cout << endl << "❌ ERROR: File is empty (0 bytes)" << endl;
+            cout << endl << "ERROR: File is empty (0 bytes)" << endl;
             if (attemptCount < MAX_ATTEMPTS) {
                 cout << "Please select a file with content." << endl;
                 continue;
@@ -1037,8 +1037,7 @@ string ApplicationCollector::getImagePath(const string& imageType) {
             }
         }
 
-        cout << endl << "✓ File found and validated!" << endl;
-        cout << "File size: " << fileSize << " bytes" << endl;
+        cout << endl << "File found and validated!" << endl;
         return path; // SUCCESS
     }
 

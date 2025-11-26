@@ -5,7 +5,7 @@
 #include "home.h"
 #include "car.h"
 #include "scooter.h"
-#include "personal.h"  // ✅ ADD THIS
+#include "personal.h" 
 #include "application.h"
 #include "application_collector.h"
 #include "file_manager.h"
@@ -35,10 +35,8 @@ int main() {
     int scooterLoanCount = loadScooterLoans(scooterLoans, Config::MAX_LOANS, Config::SCOOTER_LOANS_FILE);
     int personalLoanCount = loadPersonalLoans(personalLoans, Config::MAX_LOANS, Config::PERSONAL_LOANS_FILE);  
 
-    cout << "╔════════════════════════════════════╗" << endl;
-    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
-    cout << "║   USER CLIENT                      ║" << endl;
-    cout << "╚════════════════════════════════════╝" << endl;
+    cout << endl<<"LOAN PROCESSING SYSTEM          " << endl<<endl;
+    cout << "USER CLIENT                     " << endl<<endl;
 
     handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
         scooterLoans, scooterLoanCount, personalLoans, personalLoanCount, 

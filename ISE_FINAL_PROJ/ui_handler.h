@@ -15,9 +15,6 @@
 
 using namespace std;
 
-// ============================================
-// SHARED UI FUNCTIONS - Used by both files
-// ============================================
 
 inline void displayApplicationDetails(const LoanApplication& app) {
     cout << endl << "========================================" << endl;
@@ -264,4 +261,4 @@ inline void generateUserInstallmentPlan(const LoanApplication& application) {
         << getMonthName(startMonth) << " " << startYear << "." << endl;
 }
 
-#endif // UI_HANDLERS_H
+#endif 

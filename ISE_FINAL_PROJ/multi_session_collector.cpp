@@ -305,7 +305,6 @@ void MultiSessionCollector::resumeExistingApplication() {
         return;
     }
 
-    // ADD THIS CHECK - If application is already submitted, don't proceed
     if (application.isApplicationComplete() || application.getStatus() == "submitted") {
         cout << endl << "========================================" << endl;
         cout << "   APPLICATION ALREADY SUBMITTED" << endl;
@@ -321,17 +320,66 @@ void MultiSessionCollector::resumeExistingApplication() {
     cout << Config::CHATBOT_NAME << ": Found it!" << endl;
     displayApplicationProgress(application);
 
-    cout << endl << Config::CHATBOT_NAME << ": Shall we continue? (yes/no): ";
-    string continueChoice;
-    getline(cin, continueChoice);
+    while (true) {
+        cout << endl << Config::CHATBOT_NAME << ": Which section would you like to update?" << endl;
+        cout << "1. Personal Information" << endl;
+        cout << "2. Financial Information" << endl;
+        cout << "3. References" << endl;
+        cout << "4. Documents" << endl;
+        cout << "5. Continue from next incomplete section" << endl;
+        cout << "6. Exit" << endl;
+        cout << "Enter your choice (1-6): ";
+        string choice;
+        getline(cin, choice);
+        choice = trim(choice);
 
-    if (toLower(trim(continueChoice)) != "yes" && toLower(trim(continueChoice)) != "y") {
-        cout << Config::CHATBOT_NAME << ": No problem! Your progress is saved. Come back anytime!" << endl;
-        return;
+        bool updated = false;
+        if (choice == "1") {
+            updated = collectPersonalInfo(application);
+            if (updated) saveSectionAndContinue(application, "personal");
+        }
+        else if (choice == "2") {
+            updated = collectFinancialInfo(application);
+            if (updated) saveSectionAndContinue(application, "financial");
+        }
+        else if (choice == "3") {
+            updated = collectReferencesInfo(application);
+            if (updated) saveSectionAndContinue(application, "references");
+        }
+        else if (choice == "4") {
+            updated = collectDocumentsInfo(application);
+            if (updated) saveSectionAndContinue(application, "documents");
+        }
+        else if (choice == "5") {
+            break; // Move to default resume flow (next incomplete section)
+        }
+        else if (choice == "6") {
+            cout << Config::CHATBOT_NAME << ": No problem! Your progress is saved. Come back anytime!" << endl;
+            return;
+        }
+        else {
+            cout << Config::CHATBOT_NAME << ": Invalid choice. Please select 1-6." << endl;
+            continue;
+        }
+
+        if (application.isApplicationComplete() || application.getStatus() == "submitted") {
+            cout << endl << "========================================" << endl;
+            cout << "   CONGRATULATIONS!" << endl;
+            cout << "========================================" << endl;
+            cout << Config::CHATBOT_NAME << ": You've successfully completed your application!" << endl;
+            cout << endl << "Application Details:" << endl;
+            cout << "  Application ID: " << application.getApplicationId() << endl;
+            cout << "  Status: Submitted for Review" << endl;
+            cout << "  Submission Date: " << application.getSubmissionDate() << endl << endl;
+            cout << Config::CHATBOT_NAME << ": We'll review your application and get back to you soon!" << endl;
+            cout << "========================================" << endl;
+            return;
+        }
     }
 
+    // Continue original resume loop for incomplete sections
     bool continueProcessing = true;
-    bool applicationWasSubmitted = false; // ADD THIS FLAG
+    bool applicationWasSubmitted = false;
 
     while (continueProcessing && !application.isApplicationComplete() && !applicationWasSubmitted) {
         string nextSection = application.getNextIncompleteSection();
@@ -352,10 +400,9 @@ void MultiSessionCollector::resumeExistingApplication() {
         }
         else if (nextSection == "documents") {
             sectionCompleted = collectDocumentsInfo(application);
-            // ADD THIS CHECK - If documents were submitted, stop the loop
             if (sectionCompleted && application.getStatus() == "submitted") {
                 applicationWasSubmitted = true;
-                break; // Exit the loop immediately
+                break;
             }
         }
         else {
@@ -363,13 +410,11 @@ void MultiSessionCollector::resumeExistingApplication() {
         }
 
         if (sectionCompleted && !applicationWasSubmitted) {
-            // Reload application to get updated status, but only if not submitted
             LoanApplication updatedApp = fileManager.findIncompleteApplication(applicationId, cnic);
             if (!updatedApp.getApplicationId().empty()) {
                 application = updatedApp;
             }
 
-            // Check if user wants to continue to next section
             if (application.getNextIncompleteSection() != "complete") {
                 cout << endl << Config::CHATBOT_NAME << ": Continue to next section? (yes/no): ";
                 string nextChoice;
@@ -398,6 +443,7 @@ void MultiSessionCollector::resumeExistingApplication() {
         cout << "========================================" << endl;
     }
 }
+
 
 bool MultiSessionCollector::collectPersonalInfo(LoanApplication& application) {
     cout << endl << Config::CHATBOT_NAME << ": Let's start with your personal information." << endl;
@@ -681,6 +727,7 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
 }
 
 bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application, const string& section) {
+    // Move section progression logic here if needed
     if (section == "personal") {
         application.setStatus("C2");
     }
@@ -691,6 +738,7 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
         application.setStatus("incomplete_documents");
     }
 
+    // Mark section as completed if not already
     if (!application.isSectionCompleted(section)) {
         string currentSections = application.getCompletedSections();
         if (!currentSections.empty()) {
@@ -700,35 +748,10 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
         application.setCompletedSections(currentSections);
     }
 
+    // Save progress
     if (fileManager.updateApplicationSection(application, section)) {
         cout << endl << Config::CHATBOT_NAME << ": " << getSectionDisplayName(section)
             << " saved successfully!" << endl;
-
-        displayApplicationProgress(application);
-
-        // Only ask for continuation for non-document sections
-        if (section != "documents") {
-            cout << endl << Config::CHATBOT_NAME << ": What would you like to do?" << endl;
-            cout << "1. Continue to next section" << endl;
-            cout << "2. Save and exit (I'll come back later)" << endl;
-            cout << Config::CHATBOT_NAME << ": Choose option (1 or 2): ";
-
-            string choice;
-            getline(cin, choice);
-            choice = trim(choice);
-
-            if (choice == "2") {
-                cout << endl << Config::CHATBOT_NAME << ": Your progress has been saved!" << endl;
-                cout << Config::CHATBOT_NAME << ": To continue later, you'll need:" << endl;
-                cout << "  Application ID: " << application.getApplicationId() << endl;
-                cout << "  Your CNIC: " << application.getCnicNumber() << endl;
-                cout << Config::CHATBOT_NAME << ": See you soon!" << endl;
-                return false;
-            }
-            else {
-                return true;
-            }
-        }
         return true;
     }
     else {

@@ -53,7 +53,6 @@
     <ClCompile Include="file_manager.cpp" />
     <ClCompile Include="home.cpp" />
     <ClCompile Include="scooter.cpp" />
-    <ClCompile Include="network_utils.cpp" />
     <ClCompile Include="utterances.cpp" />
     <ClCompile Include="user_client.cpp" />
     <ClCompile Include="user_main.cpp" />
@@ -67,16 +66,12 @@
     <ClCompile Include="file_manager.cpp" />
     <ClCompile Include="home.cpp" />
     <ClCompile Include="scooter.cpp" />
-    <ClCompile Include="network_utils.cpp" />
     <ClCompile Include="utterances.cpp" />
     <ClCompile Include="lender_server.cpp" />
     <ClCompile Include="lender_main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="file_manager_multi_session.cpp" />
-    <ClCompile Include="multi_session_collector.cpp" />
     <ClCompile Include="personal.cpp" />
-    <ClCompile Include="user_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="human_chat_corpus.txt" />
