@@ -22,7 +22,7 @@ private:
     bool collectReferencesInfo(LoanApplication& application);
     bool collectDocumentsInfo(LoanApplication& application);
     bool saveSectionAndContinue(LoanApplication& application, const string& section);
-
+    void selectPersonalLoanType(LoanApplication& application);
     // Helper methods for better UX
     string getStatusDescription(const string& status) const;
     string getSectionDisplayName(const string& section) const;

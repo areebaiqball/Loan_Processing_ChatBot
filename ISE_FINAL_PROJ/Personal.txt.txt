@@ -1,0 +1,15 @@
+Category#Purpose#Description#Installments#Amount#Down Payment
+Standard Personal Loan#General Use#For any personal financial needs#36#500,000#50,000
+Standard Personal Loan#General Use#For any personal financial needs#48#750,000#75,000
+Standard Personal Loan#General Use#For any personal financial needs#60#1,000,000#100,000
+Education Loan#Education#For tuition, books, and educational expenses#60#800,000#80,000
+Education Loan#Education#For tuition, books, and educational expenses#48#600,000#60,000
+Medical Loan#Medical#For medical treatments and healthcare expenses#36#500,000#50,000
+Medical Loan#Medical#For medical treatments and healthcare expenses#48#800,000#80,000
+Wedding Loan#Wedding#For marriage and wedding expenses#36#1,000,000#100,000
+Wedding Loan#Wedding#For marriage and wedding expenses#48#1,500,000#150,000
+Wedding Loan#Wedding#For marriage and wedding expenses#60#2,000,000#200,000
+Emergency Loan#Emergency#For urgent and unexpected expenses#24#400,000#40,000
+Emergency Loan#Emergency#For urgent and unexpected expenses#36#600,000#60,000
+Home Renovation#Home Improvement#For renovating or improving your home#48#1,500,000#150,000
+Home Renovation#Home Improvement#For renovating or improving your home#60#2,000,000#200,000

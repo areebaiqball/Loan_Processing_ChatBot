@@ -11,11 +11,13 @@
 #include "utterances.h"
 #include "ui_handler.h"
 #include "multi_session_collector.h"
+#include "personal.h"
 
 using namespace std;
 
 
 // Forward declarations
+void handlePersonalLoanSelection(const PersonalLoan[], int, bool&, ApplicationCollector&, FileManager&);
 void handleHomeLoanSelection(const HomeLoan[], int, bool&, ApplicationCollector&, FileManager&);
 void handleCarLoanSelection(const CarLoan[], int, bool&, ApplicationCollector&, FileManager&);
 void handleScooterLoanSelection(const ScooterLoan[], int, bool&, ApplicationCollector&, FileManager&);
@@ -740,6 +742,452 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
     }
 }
 
+void handlePersonalLoanSelection(const PersonalLoan loans[], int loanCount, bool& running,
+    ApplicationCollector& collector, FileManager& fileManager) {
+
+    cout << Config::CHATBOT_NAME << ": You selected personal loan." << endl;
+    displayPersonalLoanCategories(loans, loanCount);
+
+    string userInput;
+    cout << "You: ";
+    getline(cin, userInput);
+    string categoryInput = trim(userInput);
+
+    if (toLower(categoryInput) == Config::EXIT_COMMAND) {
+        displayGoodbyeMessage();
+        running = false;
+        return;
+    }
+
+    bool hasData = displayPersonalLoanOptionsByCategory(loans, loanCount, categoryInput);
+    if (!hasData) return;
+
+    int optionNumber = 0;
+
+    cout << endl << Config::CHATBOT_NAME << ": View detailed installment plan? (Y/N): ";
+    getline(cin, userInput);
+    string planInput = toLower(trim(userInput));
+
+    if (planInput == Config::EXIT_COMMAND) {
+        displayGoodbyeMessage();
+        running = false;
+        return;
+    }
+
+    if (planInput == "y" || planInput == "yes") {
+        cout << Config::CHATBOT_NAME << ": Enter option number: ";
+        getline(cin, userInput);
+
+        if (toLower(trim(userInput)) == Config::EXIT_COMMAND) {
+            displayGoodbyeMessage();
+            running = false;
+            return;
+        }
+
+        try {
+            optionNumber = stoi(trim(userInput));
+            displayPersonalInstallmentPlan(loans, loanCount, optionNumber);
+        }
+        catch (const exception&) {
+            cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+        }
+    }
+
+    cout << endl << Config::CHATBOT_NAME << ": Start the loan application? (Y/N): ";
+    getline(cin, userInput);
+    string applyInput = toLower(trim(userInput));
+
+    if (applyInput == "y" || applyInput == "yes") {
+        if (optionNumber == 0) {
+            cout << Config::CHATBOT_NAME << ": Which option to apply for? Enter number: ";
+            getline(cin, userInput);
+
+            try {
+                optionNumber = stoi(trim(userInput));
+            }
+            catch (const exception&) {
+                cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+                return;
+            }
+        }
+
+        try {
+            LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan");
+
+            application.setLoanType("Personal Loan");
+
+            // Find the selected loan option
+            vector<string> categories = getPersonalLoanCategories(loans, loanCount);
+            int catNum = 0;
+            try {
+                catNum = stoi(trim(categoryInput));
+            }
+            catch (...) {
+                cout << Config::CHATBOT_NAME << ": Invalid category." << endl;
+                return;
+            }
+
+            if (catNum < 1 || catNum > static_cast<int>(categories.size())) {
+                cout << Config::CHATBOT_NAME << ": Invalid category number." << endl;
+                return;
+            }
+
+            string selectedCategory = categories[catNum - 1];
+
+            int currentOption = 0;
+            bool loanFound = false;
+
+            for (int i = 0; i < loanCount; i++) {
+                if (loans[i].getCategory() == selectedCategory) {
+                    currentOption++;
+                    if (currentOption == optionNumber) {
+                        application.setLoanCategory(loans[i].getCategory() + " - " + loans[i].getPurpose());
+                        application.setLoanAmount(loans[i].getAmount());
+                        application.setDownPayment(loans[i].getDownPayment());
+                        application.setInstallmentMonths(loans[i].getInstallments());
+                        application.setMonthlyPayment(loans[i].calculateMonthlyInstallment());
+                        loanFound = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!loanFound) {
+                cout << Config::CHATBOT_NAME << ": Error: Could not retrieve loan details." << endl;
+                return;
+            }
+
+            displayApplicationDetails(application);
+
+            cout << endl << Config::CHATBOT_NAME << ": Submit application? (Y/N): ";
+            getline(cin, userInput);
+
+            if (toLower(trim(userInput)) == "y" || toLower(trim(userInput)) == "yes") {
+                if (fileManager.saveApplication(application)) {
+                    cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
+                    cout << "Your Application ID: " << application.getApplicationId() << endl;
+                    cout << endl << "----------------------------------------" << endl;
+                    cout << "Check status: Type 'check my applications'" << endl;
+                    cout << "CNIC: " << application.getCnicNumber() << endl;
+                    cout << "----------------------------------------" << endl;
+
+                    cout << endl << "Press any key to return to main menu...";
+                    getline(cin, userInput);
+                    return;
+                }
+            }
+        }
+        catch (const exception& e) {
+            cout << Config::CHATBOT_NAME << ": Application failed: " << e.what() << endl;
+        }
+    }
+
+    cout << endl << "Returning to main menu..." << endl;
+}
+
+
+// ============================================================
+// ADD THIS FUNCTION TO user_client.cpp
+// ============================================================
+// This function allows user to select a personal loan category
+// and returns the selected loan details
+
+struct PersonalLoanSelection {
+    bool selected;
+    string category;
+    string purpose;
+    string description;
+    long long amount;
+    long long downPayment;
+    int installments;
+};
+
+PersonalLoanSelection selectPersonalLoanCategory(const PersonalLoan loans[], int loanCount) {
+    PersonalLoanSelection result;
+    result.selected = false;
+
+    // Step 1: Display all unique categories
+    cout << endl << Config::CHATBOT_NAME << ": What type of personal loan do you need?" << endl << endl;
+
+    vector<string> categories;
+
+    // Manually extract unique categories (no algorithm library)
+    for (int i = 0; i < loanCount; i++) {
+        string cat = loans[i].getCategory();
+        bool found = false;
+        for (size_t j = 0; j < categories.size(); j++) {
+            if (categories[j] == cat) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            categories.push_back(cat);
+        }
+    }
+
+    // Display categories
+    for (size_t i = 0; i < categories.size(); i++) {
+        cout << "  " << (i + 1) << ". " << categories[i] << endl;
+    }
+    cout << "  X. Exit" << endl;
+
+    cout << endl << Config::CHATBOT_NAME << ": Select category (1-" << categories.size() << "): ";
+    string categoryChoice;
+    getline(cin, categoryChoice);
+    categoryChoice = trim(categoryChoice);
+
+    if (toLower(categoryChoice) == "x") {
+        return result;
+    }
+
+    int catNum = 0;
+    try {
+        catNum = stoi(categoryChoice);
+    }
+    catch (...) {
+        cout << Config::CHATBOT_NAME << ": Invalid selection." << endl;
+        return result;
+    }
+
+    if (catNum < 1 || catNum > static_cast<int>(categories.size())) {
+        cout << Config::CHATBOT_NAME << ": Invalid category number." << endl;
+        return result;
+    }
+
+    string selectedCategory = categories[catNum - 1];
+
+    // Step 2: Show loan options for selected category
+    cout << endl << "========================================" << endl;
+    cout << "Personal Loan Options for: " << selectedCategory << endl;
+    cout << "========================================" << endl;
+    cout << "+-----+------------------+---------------------+------+-------------+---------------+" << endl;
+    cout << "| Opt | Purpose          | Description         | Inst | Amount (PKR)| Down Payment  |" << endl;
+    cout << "+-----+------------------+---------------------+------+-------------+---------------+" << endl;
+
+    vector<int> optionIndices;
+    int optionCount = 0;
+
+    for (int i = 0; i < loanCount; i++) {
+        if (loans[i].getCategory() == selectedCategory) {
+            optionCount++;
+            optionIndices.push_back(i);
+
+            string purpose = loans[i].getPurpose();
+            string description = loans[i].getDescription();
+
+            if (purpose.length() > 16) purpose = purpose.substr(0, 13) + "...";
+            if (description.length() > 19) description = description.substr(0, 16) + "...";
+
+            cout << "| " << setw(3) << optionCount << " | "
+                << setw(16) << left << purpose << " | "
+                << setw(19) << left << description << " | "
+                << setw(4) << loans[i].getInstallments() << " | "
+                << setw(11) << loans[i].getAmount() << " | "
+                << "PKR " << setw(10) << loans[i].getDownPayment() << " |" << endl;
+        }
+    }
+    cout << "+-----+------------------+---------------------+------+-------------+---------------+" << endl;
+
+    cout << endl << Config::CHATBOT_NAME << ": Select an option (1-" << optionCount << "): ";
+    string optionChoice;
+    getline(cin, optionChoice);
+    optionChoice = trim(optionChoice);
+
+    int selectedOption = 0;
+    try {
+        selectedOption = stoi(optionChoice);
+    }
+    catch (...) {
+        cout << Config::CHATBOT_NAME << ": Invalid option." << endl;
+        return result;
+    }
+
+    if (selectedOption < 1 || selectedOption > optionCount) {
+        cout << Config::CHATBOT_NAME << ": Invalid option number." << endl;
+        return result;
+    }
+
+    // Step 3: Get loan details from selected option
+    int loanIndex = optionIndices[selectedOption - 1];
+
+    result.selected = true;
+    result.category = loans[loanIndex].getCategory();
+    result.purpose = loans[loanIndex].getPurpose();
+    result.description = loans[loanIndex].getDescription();
+    result.amount = loans[loanIndex].getAmount();
+    result.downPayment = loans[loanIndex].getDownPayment();
+    result.installments = loans[loanIndex].getInstallments();
+
+    // Display summary
+    cout << endl << "========================================" << endl;
+    cout << "Loan Selected:" << endl;
+    cout << "========================================" << endl;
+    cout << "Category: " << result.category << endl;
+    cout << "Purpose: " << result.purpose << endl;
+    cout << "Description: " << result.description << endl;
+    cout << "Amount: PKR " << result.amount << endl;
+    cout << "Down Payment: PKR " << result.downPayment << endl;
+    cout << "Installment Period: " << result.installments << " months" << endl;
+    cout << "Monthly Payment: PKR " << (result.amount - result.downPayment) / result.installments << endl;
+    cout << "========================================" << endl;
+
+    return result;
+}
+// ============================================================
+// UPDATE THE handleUserMode FUNCTION - Change this part:
+// ============================================================
+// Replace the old handleUserMode signature and beginning with:
+
+void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
+    const CarLoan carLoans[], int carLoanCount,
+    const ScooterLoan scooterLoans[], int scooterLoanCount,
+    const PersonalLoan personalLoans[], int personalLoanCount,  // ADDED THIS PARAMETER
+    const Utterance utterances[], int utteranceCount,
+    ApplicationCollector& collector, FileManager& fileManager) {
+
+    MultiSessionCollector multiSessionCollector(fileManager);
+    bool running = true;
+    string userInput;
+
+    cout << endl << Config::CHATBOT_NAME << ": Hello! I'm your loan assistant." << endl;
+    cout << "I can help you with new loan applications or resume incomplete ones." << endl;
+
+    while (running) {
+        try {
+            multiSessionCollector.showApplicationMenu();
+            cout << "You: ";
+
+            if (!getline(cin, userInput)) {
+                running = false;
+                break;
+            }
+
+            string lowerInput = toLower(trim(userInput));
+
+            if (lowerInput.empty()) {
+                continue;
+            }
+
+            if (lowerInput == "1" || lowerInput == "start new" || lowerInput == "new") {
+                // NEW LOAN APPLICATION FLOW
+                displayLoanCategories();
+                cout << "You: ";
+                getline(cin, userInput);
+                string loanChoice = toLower(trim(userInput));
+
+                if (loanChoice == "h" || loanChoice == "home") {
+                    handleHomeLoanSelection(homeLoans, homeLoanCount, running, collector, fileManager);
+                }
+                else if (loanChoice == "c" || loanChoice == "car") {
+                    handleCarLoanSelection(carLoans, carLoanCount, running, collector, fileManager);
+                }
+                else if (loanChoice == "s" || loanChoice == "scooter") {
+                    handleScooterLoanSelection(scooterLoans, scooterLoanCount, running, collector, fileManager);
+                }
+                else if (loanChoice == "p" || loanChoice == "personal") {
+                    // UPDATED PERSONAL LOAN HANDLING WITH CATEGORIES
+                    PersonalLoanSelection selection = selectPersonalLoanCategory(personalLoans, personalLoanCount);
+
+                    if (selection.selected) {
+                        cout << endl << Config::CHATBOT_NAME << ": Ready to apply? (yes/no): ";
+                        string applyConfirm;
+                        getline(cin, applyConfirm);
+
+                        if (toLower(trim(applyConfirm)) == "yes" || toLower(trim(applyConfirm)) == "y") {
+                            try {
+                                LoanApplication application = collector.collectApplicationForLoan("personal", "Personal Loan");
+
+                                // Set loan details from selected personal loan
+                                application.setLoanType("Personal Loan");
+                                application.setLoanCategory(selection.category + " - " + selection.purpose);
+                                application.setLoanAmount(selection.amount);
+                                application.setDownPayment(selection.downPayment);
+                                application.setInstallmentMonths(selection.installments);
+                                application.setMonthlyPayment((selection.amount - selection.downPayment) / selection.installments);
+
+                                displayApplicationDetails(application);
+
+                                cout << endl << Config::CHATBOT_NAME << ": Submit this application? (yes/no): ";
+                                string confirmSubmit;
+                                getline(cin, confirmSubmit);
+
+                                if (toLower(trim(confirmSubmit)) == "yes" || toLower(trim(confirmSubmit)) == "y") {
+                                    if (fileManager.saveApplication(application)) {
+                                        cout << endl << Config::CHATBOT_NAME << ": Application submitted successfully!" << endl;
+                                        cout << "Your Application ID: " << application.getApplicationId() << endl;
+                                        cout << "CNIC: " << application.getCnicNumber() << endl;
+                                        cout << endl << "Press Enter to continue...";
+                                        getline(cin, applyConfirm);
+                                    }
+                                }
+                            }
+                            catch (const exception& e) {
+                                cout << Config::CHATBOT_NAME << ": Application failed: " << e.what() << endl;
+                            }
+                        }
+                    }
+                }
+                else if (loanChoice == "x" || loanChoice == "exit") {
+                    running = false;
+                }
+                else {
+                    cout << Config::CHATBOT_NAME << ": Invalid loan category selection." << endl;
+                }
+            }
+            else if (lowerInput == "2" || lowerInput == "resume" || lowerInput == "continue") {
+                try {
+                    multiSessionCollector.resumeExistingApplication();
+                }
+                catch (const exception& e) {
+                    cout << Config::CHATBOT_NAME << ": Sorry, an error occurred: " << e.what() << endl;
+                }
+            }
+            else if (lowerInput == "3" || lowerInput == "check" || lowerInput == "status") {
+                try {
+                    checkApplicationStatusByCNIC(fileManager);
+                }
+                catch (const exception& e) {
+                    cout << Config::CHATBOT_NAME << ": Sorry, an error occurred: " << e.what() << endl;
+                }
+            }
+            else if (lowerInput == "4" || lowerInput == "exit" || lowerInput == "x") {
+                cout << Config::CHATBOT_NAME << ": Thank you for using our service. Goodbye!" << endl;
+                running = false;
+            }
+            else {
+                // Handle natural language inputs
+                if (lowerInput.find("new") != string::npos || lowerInput.find("apply") != string::npos) {
+                    multiSessionCollector.startNewApplication();
+                }
+                else if (lowerInput.find("resume") != string::npos || lowerInput.find("continue") != string::npos) {
+                    multiSessionCollector.resumeExistingApplication();
+                }
+                else if (lowerInput.find("status") != string::npos || lowerInput.find("check") != string::npos) {
+                    checkApplicationStatusByCNIC(fileManager);
+                }
+                else {
+                    string response = getResponse(utterances, utteranceCount, userInput);
+                    cout << Config::CHATBOT_NAME << ": " << response << endl;
+                }
+            }
+        }
+        catch (const exception& e) {
+            cout << endl << "ERROR: " << e.what() << endl;
+            cin.clear();
+            if (cin.fail()) {
+                cin.ignore(10000, '\n');
+            }
+        }
+        catch (...) {
+            cout << endl << "ERROR: Unknown error occurred" << endl;
+            cin.clear();
+            if (cin.fail()) {
+                cin.ignore(10000, '\n');
+            }
+        }
+    }
+}
 
 
 //int main() {
@@ -755,15 +1203,16 @@ void checkApplicationStatusByCNIC(FileManager& fileManager) {
 //    int homeLoanCount = loadHomeLoans(homeLoans, Config::MAX_LOANS, Config::HOME_LOANS_FILE);
 //    int carLoanCount = loadCarLoans(carLoans, Config::MAX_LOANS, Config::CAR_LOANS_FILE);
 //    int scooterLoanCount = loadScooterLoans(scooterLoans, Config::MAX_LOANS, Config::SCOOTER_LOANS_FILE);
+//  int personalLoanCount = loadPersonalLoans(personalLoans, Config::MAX_LOANS, Config::PERSONAL_LOANS_FILE);
 //
 //    cout << "╔════════════════════════════════════╗" << endl;
 //    cout << "║   LOAN PROCESSING SYSTEM           ║" << endl;
 //    cout << "║   USER CLIENT                      ║" << endl;
 //    cout << "╚════════════════════════════════════╝" << endl;
 //
-//    handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
-//        scooterLoans, scooterLoanCount, utterances, utteranceCount,
-//        collector, fileManager);
-//
+//   handleUserMode(homeLoans, homeLoanCount, carLoans, carLoanCount,
+//         scooterLoans, scooterLoanCount, personalLoans, personalLoanCount,  
+//         utterances, utteranceCount,
+//         collector, fileManager);
 //    return 0;
 //}

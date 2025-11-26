@@ -40,6 +40,7 @@
     <ClInclude Include="home.h" />
     <ClInclude Include="multi_session_collector.h" />
     <ClInclude Include="network_utils.h" />
+    <ClInclude Include="personal.h" />
     <ClInclude Include="scooter.h" />
     <ClInclude Include="ui_handler.h" />
     <ClInclude Include="utilities.h" />
@@ -61,7 +62,7 @@
   <!-- LenderServer: Include ONLY lender files -->
   <ItemGroup Condition="'$(Configuration)'=='LenderServer'">
     <ClCompile Include="application.cpp" />
-    <ClCompile Include="application_collector.cpp" /> 
+    <ClCompile Include="application_collector.cpp" />
     <ClCompile Include="car.cpp" />
     <ClCompile Include="file_manager.cpp" />
     <ClCompile Include="home.cpp" />
@@ -73,6 +74,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="file_manager_multi_session.cpp" />
+    <ClCompile Include="multi_session_collector.cpp" />
+    <ClCompile Include="personal.cpp" />
+    <ClCompile Include="user_client.cpp" />
   </ItemGroup>
   <!-- Output directories -->
   <PropertyGroup Condition="'$(Configuration)'=='UserClient'">

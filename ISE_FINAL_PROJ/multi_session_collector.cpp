@@ -1,4 +1,5 @@
 ﻿#include "multi_session_collector.h"
+#include "personal.h"
 #include <iomanip>
 
 using namespace std;
@@ -24,14 +25,13 @@ void MultiSessionCollector::displayApplicationProgress(const LoanApplication& ap
     cout << "Application ID: " << application.getApplicationId() << endl;
     cout << "Current Status: " << getStatusDescription(application.getStatus()) << endl << endl;
 
-    // Show progress with checkmarks
     vector<string> sections = { "personal", "financial", "references", "documents" };
     vector<string> sectionNames = { "Personal Information", "Financial Information", "References", "Documents" };
 
     cout << "Progress Checklist:" << endl;
     for (size_t i = 0; i < sections.size(); i++) {
         bool completed = application.isSectionCompleted(sections[i]);
-        cout << "  " << (completed ? "[✓]" : "[ ]") << " " << sectionNames[i] << endl;
+        cout << "  " << (completed ? "[V]" : "[ ]") << " " << sectionNames[i] << endl;
     }
 
     string nextSection = application.getNextIncompleteSection();
@@ -62,7 +62,68 @@ string MultiSessionCollector::getSectionDisplayName(const string& section) const
     if (section == "documents") return "Documents";
     return section;
 }
+// Add this method to MultiSessionCollector class in multi_session_collector.cpp
+void MultiSessionCollector::selectPersonalLoanType(LoanApplication& application) {
+    cout << endl << "========================================" << endl;
+    cout << "   PERSONAL LOAN TYPE SELECTION" << endl;
+    cout << "========================================" << endl;
+    cout << Config::CHATBOT_NAME << ": What type of personal loan do you need?" << endl << endl;
 
+    // You'll need to load personal loans here or pass them as parameter
+    // For now, let's create a simple selection
+    cout << "1. Standard Personal Loan - For any personal financial needs" << endl;
+    cout << "2. Education Loan - For tuition, books, and educational expenses" << endl;
+    cout << "3. Medical Loan - For medical treatments and healthcare expenses" << endl;
+    cout << "4. Wedding Loan - For marriage and wedding expenses" << endl;
+    cout << "5. Emergency Loan - For urgent and unexpected expenses" << endl;
+    cout << "6. Home Renovation - For renovating or improving your home" << endl;
+
+    cout << endl << Config::CHATBOT_NAME << ": Please choose an option (1-6): ";
+
+    string loanChoice;
+    if (!getline(cin, loanChoice)) {
+        cout << Config::CHATBOT_NAME << ": Input error. Using standard personal loan." << endl;
+        application.setLoanCategory("Standard Personal Loan");
+        return;
+    }
+
+    loanChoice = trim(loanChoice);
+
+    if (loanChoice == "1") {
+        application.setLoanCategory("Standard Personal Loan");
+        cout << Config::CHATBOT_NAME << ": Standard Personal Loan selected." << endl;
+    }
+    else if (loanChoice == "2") {
+        application.setLoanCategory("Education Loan");
+        cout << Config::CHATBOT_NAME << ": Education Loan selected." << endl;
+    }
+    else if (loanChoice == "3") {
+        application.setLoanCategory("Medical Loan");
+        cout << Config::CHATBOT_NAME << ": Medical Loan selected." << endl;
+    }
+    else if (loanChoice == "4") {
+        application.setLoanCategory("Wedding Loan");
+        cout << Config::CHATBOT_NAME << ": Wedding Loan selected." << endl;
+    }
+    else if (loanChoice == "5") {
+        application.setLoanCategory("Emergency Loan");
+        cout << Config::CHATBOT_NAME << ": Emergency Loan selected." << endl;
+    }
+    else if (loanChoice == "6") {
+        application.setLoanCategory("Home Renovation");
+        cout << Config::CHATBOT_NAME << ": Home Renovation Loan selected." << endl;
+    }
+    else {
+        cout << Config::CHATBOT_NAME << ": Invalid choice. Using Standard Personal Loan." << endl;
+        application.setLoanCategory("Standard Personal Loan");
+    }
+
+    // Set default values for personal loan
+    application.setLoanAmount(500000);
+    application.setDownPayment(50000);
+    application.setInstallmentMonths(36);
+    application.setMonthlyPayment(12500);
+}
 void MultiSessionCollector::startNewApplication() {
     try {
         cout << endl << "========================================" << endl;
@@ -71,7 +132,6 @@ void MultiSessionCollector::startNewApplication() {
         cout << Config::CHATBOT_NAME << ": Excellent! Let's start your loan application journey." << endl;
         cout << Config::CHATBOT_NAME << ": I'll guide you through each step carefully." << endl << endl;
 
-        // Loan type selection
         cout << Config::CHATBOT_NAME << ": First, what type of loan are you interested in?" << endl << endl;
         cout << "1. Home Loan - For purchasing or constructing your dream home" << endl;
         cout << "2. Car Loan - For buying a new or used vehicle" << endl;
@@ -106,6 +166,31 @@ void MultiSessionCollector::startNewApplication() {
             loanType = "personal";
             loanDetails = "Personal Loan";
             cout << Config::CHATBOT_NAME << ": Personal loans offer great flexibility!" << endl;
+
+            // ADD PERSONAL LOAN CATEGORY SELECTION
+            cout << endl << Config::CHATBOT_NAME << ": What type of personal loan do you need?" << endl;
+            cout << "1. Standard Personal Loan - For any personal needs" << endl;
+            cout << "2. Education Loan - For tuition and educational expenses" << endl;
+            cout << "3. Medical Loan - For medical treatments" << endl;
+            cout << "4. Wedding Loan - For marriage expenses" << endl;
+            cout << "5. Emergency Loan - For urgent needs" << endl;
+            cout << "6. Home Renovation - For home improvements" << endl;
+            cout << Config::CHATBOT_NAME << ": Please choose (1-6): ";
+
+            string personalType;
+            getline(cin, personalType);
+            personalType = trim(personalType);
+
+            if (personalType == "1") loanDetails = "Standard Personal Loan";
+            else if (personalType == "2") loanDetails = "Education Loan";
+            else if (personalType == "3") loanDetails = "Medical Loan";
+            else if (personalType == "4") loanDetails = "Wedding Loan";
+            else if (personalType == "5") loanDetails = "Emergency Loan";
+            else if (personalType == "6") loanDetails = "Home Renovation";
+            else {
+                cout << Config::CHATBOT_NAME << ": Invalid choice. Using Standard Personal Loan." << endl;
+                loanDetails = "Standard Personal Loan";
+            }
         }
         else {
             cout << Config::CHATBOT_NAME << ": Hmm, that's not a valid option. Let's try again." << endl;
@@ -115,22 +200,22 @@ void MultiSessionCollector::startNewApplication() {
         LoanApplication application;
         application.setLoanType(loanType);
         application.setLoanCategory(loanDetails);
-        application.setStatus("C1"); // Checkpoint 1 - Personal Info needed
+        application.setStatus("C1");
 
-        // Generate application ID
         string appId = fileManager.generateApplicationId();
         application.setApplicationId(appId);
         application.setSubmissionDate(getCurrentDate());
 
         cout << endl << "========================================" << endl;
-        cout << "   🎉 APPLICATION CREATED 🎉" << endl;
+        cout << "   APPLICATION CREATED" << endl;
         cout << "========================================" << endl;
         cout << Config::CHATBOT_NAME << ": Your application has been created!" << endl;
         cout << endl << "Your Application ID: " << appId << endl;
-        cout << "Loan Type: " << loanDetails << endl;
+        cout << "Loan Type: " << loanType << endl;
+        cout << "Loan Category: " << loanDetails << endl;
         cout << "Date: " << getCurrentDate() << endl << endl;
-        cout << "⚠️  IMPORTANT: Please save this Application ID!" << endl;
-        cout << "   You'll need it if you want to continue later." << endl;
+        cout << "IMPORTANT: Please save this Application ID!" << endl;
+        cout << "You'll need it if you want to continue later." << endl;
         cout << "========================================" << endl << endl;
 
         cout << Config::CHATBOT_NAME << ": Ready to start with your personal information? (yes/no): ";
@@ -142,10 +227,40 @@ void MultiSessionCollector::startNewApplication() {
         }
 
         if (toLower(trim(ready)) == "yes" || toLower(trim(ready)) == "y") {
-            collectPersonalInfo(application);
+            // Start the multi-section collection flow
+            bool continueProcessing = true;
+
+            // Personal Information
+            if (continueProcessing) {
+                continueProcessing = collectPersonalInfo(application);
+            }
+
+            // Financial Information (if user chose to continue)
+            if (continueProcessing) {
+                // Reload application to get latest data
+                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
+                if (!updatedApp.getApplicationId().empty()) {
+                    continueProcessing = collectFinancialInfo(updatedApp);
+                }
+            }
+
+            // References (if user chose to continue)
+            if (continueProcessing) {
+                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
+                if (!updatedApp.getApplicationId().empty()) {
+                    continueProcessing = collectReferencesInfo(updatedApp);
+                }
+            }
+
+            // Documents (if user chose to continue)
+            if (continueProcessing) {
+                LoanApplication updatedApp = fileManager.findIncompleteApplication(appId, application.getCnicNumber());
+                if (!updatedApp.getApplicationId().empty()) {
+                    continueProcessing = collectDocumentsInfo(updatedApp);
+                }
+            }
         }
         else {
-            // Save incomplete application
             fileManager.updateApplicationSection(application, "");
             cout << Config::CHATBOT_NAME << ": No problem! Your application has been saved." << endl;
             cout << Config::CHATBOT_NAME << ": Come back anytime with your Application ID: " << appId << endl;
@@ -178,7 +293,6 @@ void MultiSessionCollector::resumeExistingApplication() {
     getline(cin, cnic);
     cnic = trim(cnic);
 
-    // Validate CNIC
     if (cnic.length() != 13) {
         cout << Config::CHATBOT_NAME << ": Sorry, CNIC must be exactly 13 digits." << endl;
         cout << Config::CHATBOT_NAME << ": Example: 3520212345678" << endl;
@@ -198,16 +312,11 @@ void MultiSessionCollector::resumeExistingApplication() {
 
     if (application.getApplicationId().empty()) {
         cout << endl << "========================================" << endl;
-        cout << "   ❌ APPLICATION NOT FOUND" << endl;
+        cout << "   APPLICATION NOT FOUND" << endl;
         cout << "========================================" << endl;
         cout << Config::CHATBOT_NAME << ": I couldn't find an incomplete application with:" << endl;
-        cout << "  • Application ID: " << applicationId << endl;
-        cout << "  • CNIC: " << cnic << endl << endl;
-        cout << Config::CHATBOT_NAME << ": This could mean:" << endl;
-        cout << "  1. The Application ID might be incorrect" << endl;
-        cout << "  2. The CNIC doesn't match our records" << endl;
-        cout << "  3. The application might already be submitted" << endl;
-        cout << "  4. The application doesn't exist" << endl << endl;
+        cout << "  Application ID: " << applicationId << endl;
+        cout << "  CNIC: " << cnic << endl << endl;
         cout << Config::CHATBOT_NAME << ": Would you like to start a new application instead? (yes/no): ";
         string choice;
         getline(cin, choice);
@@ -217,7 +326,7 @@ void MultiSessionCollector::resumeExistingApplication() {
         return;
     }
 
-    cout << Config::CHATBOT_NAME << ": Found it! 🎉" << endl;
+    cout << Config::CHATBOT_NAME << ": Found it!" << endl;
     displayApplicationProgress(application);
 
     cout << endl << Config::CHATBOT_NAME << ": Shall we continue? (yes/no): ";
@@ -229,7 +338,6 @@ void MultiSessionCollector::resumeExistingApplication() {
         return;
     }
 
-    // Continue from where user left off
     bool continueProcessing = true;
     while (continueProcessing && !application.isApplicationComplete()) {
         string nextSection = application.getNextIncompleteSection();
@@ -253,7 +361,6 @@ void MultiSessionCollector::resumeExistingApplication() {
             break;
         }
 
-        // Refresh the application from file to get updated status
         if (continueProcessing) {
             application = fileManager.findIncompleteApplication(applicationId, cnic);
         }
@@ -261,18 +368,18 @@ void MultiSessionCollector::resumeExistingApplication() {
 
     if (application.isApplicationComplete()) {
         cout << endl << "========================================" << endl;
-        cout << "   🎉 CONGRATULATIONS! 🎉" << endl;
+        cout << "   CONGRATULATIONS!" << endl;
         cout << "========================================" << endl;
         cout << Config::CHATBOT_NAME << ": You've successfully completed your application!" << endl;
         cout << endl << "Application Details:" << endl;
-        cout << "  • Application ID: " << application.getApplicationId() << endl;
-        cout << "  • Status: Submitted for Review" << endl;
-        cout << "  • Submission Date: " << application.getSubmissionDate() << endl << endl;
+        cout << "  Application ID: " << application.getApplicationId() << endl;
+        cout << "  Status: Submitted for Review" << endl;
+        cout << "  Submission Date: " << application.getSubmissionDate() << endl << endl;
         cout << Config::CHATBOT_NAME << ": We'll review your application and get back to you soon!" << endl;
-        cout << Config::CHATBOT_NAME << ": You can check your status anytime using your CNIC." << endl;
         cout << "========================================" << endl;
     }
 }
+
 bool MultiSessionCollector::collectPersonalInfo(LoanApplication& application) {
     cout << endl << Config::CHATBOT_NAME << ": Let's start with your personal information." << endl;
     cout << Config::CHATBOT_NAME << ": This helps us understand you better!" << endl << endl;
@@ -328,7 +435,6 @@ bool MultiSessionCollector::collectPersonalInfo(LoanApplication& application) {
             "How many dependents do you have? ", "Dependents", 0, 20);
         application.setNumberOfDependents(dependents);
 
-        // Validate
         ValidationResult validation = application.validatePersonalInfo();
         if (!validation.isValid) {
             cout << endl << Config::CHATBOT_NAME << ": Oops! There are some issues:" << endl;
@@ -367,7 +473,6 @@ bool MultiSessionCollector::collectFinancialInfo(LoanApplication& application) {
             "Current electricity bill", 0, 100000);
         application.setCurrentElectricityBill(currentElectricityBill);
 
-        // Existing loans
         cout << endl << Config::CHATBOT_NAME << ": Do you have any existing loans? (yes/no): ";
         string hasLoans;
         getline(cin, hasLoans);
@@ -414,7 +519,7 @@ bool MultiSessionCollector::collectFinancialInfo(LoanApplication& application) {
 
                 if (loan.validate()) {
                     application.addExistingLoan(loan);
-                    cout << Config::CHATBOT_NAME << ": ✓ Loan #" << loanCount << " recorded!" << endl;
+                    cout << Config::CHATBOT_NAME << ": Loan #" << loanCount << " recorded!" << endl;
                 }
 
                 if (loanCount < 10) {
@@ -441,6 +546,7 @@ bool MultiSessionCollector::collectFinancialInfo(LoanApplication& application) {
         return false;
     }
 }
+
 bool MultiSessionCollector::collectReferencesInfo(LoanApplication& application) {
     cout << endl << Config::CHATBOT_NAME << ": We need two references who can vouch for you." << endl;
     cout << Config::CHATBOT_NAME << ": These should be people who know you well." << endl << endl;
@@ -481,7 +587,7 @@ bool MultiSessionCollector::collectReferencesInfo(LoanApplication& application) 
             return false;
         }
 
-        cout << endl << Config::CHATBOT_NAME << ": ✓ References recorded successfully!" << endl;
+        cout << endl << Config::CHATBOT_NAME << ": References recorded successfully!" << endl;
         return saveSectionAndContinue(application, "references");
 
     }
@@ -515,7 +621,6 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
             return false;
         }
 
-        // Mark as submitted
         application.setStatus("submitted");
         if (application.getSubmissionDate().empty()) {
             application.setSubmissionDate(getCurrentDate());
@@ -523,19 +628,19 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
 
         if (fileManager.saveApplication(application)) {
             cout << endl << "========================================" << endl;
-            cout << "   🎉 APPLICATION SUBMITTED! 🎉" << endl;
+            cout << "   APPLICATION SUBMITTED!" << endl;
             cout << "========================================" << endl;
             cout << Config::CHATBOT_NAME << ": Congratulations! Your application is complete!" << endl;
             cout << endl << "Details:" << endl;
-            cout << "  • Application ID: " << application.getApplicationId() << endl;
-            cout << "  • Date: " << application.getSubmissionDate() << endl;
-            cout << "  • Status: Submitted for Review" << endl << endl;
+            cout << "  Application ID: " << application.getApplicationId() << endl;
+            cout << "  Date: " << application.getSubmissionDate() << endl;
+            cout << "  Status: Submitted for Review" << endl << endl;
             cout << Config::CHATBOT_NAME << ": We'll review your application and contact you soon!" << endl;
             cout << "========================================" << endl;
             return true;
         }
         else {
-            cout << Config::CHATBOT_NAME << ": ❌ Failed to save application." << endl;
+            cout << Config::CHATBOT_NAME << ": Failed to save application." << endl;
             return false;
         }
 
@@ -547,18 +652,16 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
 }
 
 bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application, const string& section) {
-    // Update status based on checkpoint
     if (section == "personal") {
-        application.setStatus("C2"); // Checkpoint 2 - Financial needed
+        application.setStatus("C2");
     }
     else if (section == "financial") {
-        application.setStatus("C3"); // Checkpoint 3 - References needed
+        application.setStatus("C3");
     }
     else if (section == "references") {
-        application.setStatus("incomplete_documents"); // Documents needed
+        application.setStatus("incomplete_documents");
     }
 
-    // Mark section as completed
     if (!application.isSectionCompleted(section)) {
         string currentSections = application.getCompletedSections();
         if (!currentSections.empty()) {
@@ -569,12 +672,13 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
     }
 
     if (fileManager.updateApplicationSection(application, section)) {
-        cout << endl << Config::CHATBOT_NAME << ": ✓ " << getSectionDisplayName(section)
+        cout << endl << Config::CHATBOT_NAME << ": " << getSectionDisplayName(section)
             << " saved successfully!" << endl;
 
         displayApplicationProgress(application);
 
         if (section != "documents") {
+            // KEEP THE USER PROMPT - This is required behavior
             cout << endl << Config::CHATBOT_NAME << ": What would you like to do?" << endl;
             cout << "1. Continue to next section" << endl;
             cout << "2. Save and exit (I'll come back later)" << endl;
@@ -585,19 +689,25 @@ bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application,
             choice = trim(choice);
 
             if (choice == "2") {
-                cout << endl << Config::CHATBOT_NAME << ": 💾 Your progress has been saved!" << endl;
+                cout << endl << Config::CHATBOT_NAME << ": Your progress has been saved!" << endl;
                 cout << Config::CHATBOT_NAME << ": To continue later, you'll need:" << endl;
-                cout << "  • Application ID: " << application.getApplicationId() << endl;
-                cout << "  • Your CNIC: " << application.getCnicNumber() << endl;
+                cout << "  Application ID: " << application.getApplicationId() << endl;
+                cout << "  Your CNIC: " << application.getCnicNumber() << endl;
                 cout << Config::CHATBOT_NAME << ": See you soon!" << endl;
-                return false;
+                return false; // Return false to stop the flow
             }
-            return true; // Continue to next section
+            else if (choice == "1") {
+                return true; // Return true to continue
+            }
+            else {
+                cout << Config::CHATBOT_NAME << ": Invalid choice. Continuing to next section." << endl;
+                return true; // Default to continue
+            }
         }
-        return true; // Documents completed
+        return true;
     }
     else {
-        cout << Config::CHATBOT_NAME << ": ❌ Failed to save. Please try again." << endl;
+        cout << Config::CHATBOT_NAME << ": Failed to save. Please try again." << endl;
         return false;
     }
 }

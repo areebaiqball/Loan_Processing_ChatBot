@@ -18,6 +18,7 @@ namespace Config {
     const string HOME_LOANS_FILE = "Home.txt";
     const string CAR_LOANS_FILE = "Car.txt";
     const string SCOOTER_LOANS_FILE = "Scooter.txt";
+    const string PERSONAL_LOANS_FILE = "Personal.txt";
     const int MAX_UTTERANCES = 100;
     const int MAX_LOANS = 100;
     const char DELIMITER = '#';

@@ -5,11 +5,13 @@
 #include "home.h"
 #include "car.h"
 #include "scooter.h"
+#include "personal.h"
 #include "file_manager.h"
 #include "utilities.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -88,6 +90,16 @@ inline void displayScooterMakes() {
     cout << Config::CHATBOT_NAME << ": Please select the scooter make:" << endl;
     cout << "  Press 1 for Make 1" << endl;
     cout << "  Press X to exit" << endl;
+}
+
+inline void displayPersonalLoanCategories(const PersonalLoan loans[], int size) {
+    vector<string> categories = getPersonalLoanCategories(loans, size);
+
+    cout << Config::CHATBOT_NAME << ": Please select a personal loan category:" << endl;
+    for (size_t i = 0; i < categories.size(); i++) {
+        cout << "  " << (i + 1) << ". " << categories[i] << endl;
+    }
+    cout << "  X - Exit" << endl;
 }
 
 inline bool displayCarLoanOptionsByMake(const CarLoan loans[], int size, const string& makeNumber) {
