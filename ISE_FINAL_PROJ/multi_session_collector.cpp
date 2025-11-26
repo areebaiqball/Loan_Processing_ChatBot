@@ -12,9 +12,10 @@ void MultiSessionCollector::showApplicationMenu() {
     cout << "1. Start a brand new loan application" << endl;
     cout << "2. Continue my incomplete application" << endl;
     cout << "3. Check my application status" << endl;
-    cout << "4. Return to main menu" << endl;
+    cout << "4. Start general conversation mode" << endl;
+    cout << "5. Return to main menu" << endl;
     cout << "========================================" << endl;
-    cout << Config::CHATBOT_NAME << ": Please choose an option (1-4): ";
+    cout << Config::CHATBOT_NAME << ": Please choose an option (1-5): ";
 }
 
 void MultiSessionCollector::displayApplicationProgress(const LoanApplication& application) {

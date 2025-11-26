@@ -205,7 +205,7 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
     const ScooterLoan scooterLoans[], int scooterLoanCount,
     const Utterance utterances[], int utteranceCount,
     ApplicationCollector& collector, FileManager& fileManager) {
-
+    vector<ConversationPair> conversationCorpus = loadConversationCorpus("human_chat_corpus.txt");
     MultiSessionCollector multiSessionCollector(fileManager);
     bool running = true;
     string userInput;
@@ -257,7 +257,28 @@ void handleUserMode(const HomeLoan homeLoans[], int homeLoanCount,
                     cout << Config::CHATBOT_NAME << ": Let's try again." << endl;
                 }
             }
-            else if (lowerInput == "4" || lowerInput == "exit" || lowerInput == "x") {
+            else if (lowerInput == "4" || lowerInput == "chat" || lowerInput == "conversation") {
+                cout << Config::CHATBOT_NAME << ": I'm now in general conversation mode! Feel free to chat with me. Type 'exit' to return to the main menu." << endl;
+
+                bool inChatMode = true;
+                while (inChatMode) {
+                    cout << "You: ";
+                    getline(cin, userInput);
+
+                    string chatInput = toLower(trim(userInput));
+
+                    if (chatInput == "exit" || chatInput == "quit" || chatInput == "back") {
+                        cout << Config::CHATBOT_NAME << ": Returning to main menu." << endl;
+                        inChatMode = false;
+                    }
+                    else if (!chatInput.empty()) {
+                        // Use IoU matching for response
+                        string response = getResponseByIoU(conversationCorpus, userInput);
+                        cout << Config::CHATBOT_NAME << ": " << response << endl;
+                    }
+                }
+            }
+            else if (lowerInput == "5" || lowerInput == "exit" || lowerInput == "x") {
                 cout << Config::CHATBOT_NAME << ": Thank you for using our service. Goodbye!" << endl;
                 running = false;
             }

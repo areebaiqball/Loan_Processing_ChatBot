@@ -78,6 +78,9 @@
     <ClCompile Include="personal.cpp" />
     <ClCompile Include="user_client.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="human_chat_corpus.txt" />
+  </ItemGroup>
   <!-- Output directories -->
   <PropertyGroup Condition="'$(Configuration)'=='UserClient'">
     <OutDir>x64\UserClient\</OutDir>

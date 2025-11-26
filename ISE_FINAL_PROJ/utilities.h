@@ -6,6 +6,9 @@
 #include <vector>
 #include <cctype>
 #include <ctime>
+#include <sstream>
+#include <unordered_set>
+#include <fstream>
 using namespace std;
 
 /// <summary>
@@ -26,6 +29,15 @@ namespace Config {
     const string APPLICATIONS_FILE = "applications.txt";
     const string IMAGES_DIRECTORY = "images/";
 }
+
+/// <summary>
+/// Structure to hold conversation pairs from human_chat_corpus.txt
+/// </summary>
+struct ConversationPair {
+    string human1;
+    string human2;
+};
+
 // String Processing Utilities
 
 /// <summary>
@@ -169,6 +181,128 @@ inline int compareDates(const string& date1, const string& date2) {
     if (day1 != day2) return day1 < day2 ? -1 : 1;
 
     return 0;
+}
+
+/// <summary>
+/// Tokenizes a string into words (converts to lowercase and removes punctuation)
+/// </summary>
+/// <param name="text">Input text to tokenize</param>
+/// <returns>Vector of cleaned tokens</returns>
+inline vector<string> tokenize(const string& text) {
+    vector<string> tokens;
+    istringstream iss(text);
+    string token;
+
+    while (iss >> token) {
+        // Convert to lowercase and remove punctuation
+        string cleanToken;
+        for (char c : token) {
+            if (isalnum(static_cast<unsigned char>(c))) {
+                cleanToken += tolower(static_cast<unsigned char>(c));
+            }
+        }
+        if (!cleanToken.empty()) {
+            tokens.push_back(cleanToken);
+        }
+    }
+    return tokens;
+}
+
+/// <summary>
+/// Calculates Intersection over Union (IoU) between two strings
+/// </summary>
+/// <param name="text1">First text to compare</param>
+/// <param name="text2">Second text to compare</param>
+/// <returns>IoU score between 0.0 and 1.0</returns>
+inline double calculateIoU(const string& text1, const string& text2) {
+    auto tokens1 = tokenize(text1);
+    auto tokens2 = tokenize(text2);
+
+    unordered_set<string> set1(tokens1.begin(), tokens1.end());
+    unordered_set<string> set2(tokens2.begin(), tokens2.end());
+
+    // Calculate intersection
+    int intersection = 0;
+    for (const auto& token : set1) {
+        if (set2.find(token) != set2.end()) {
+            intersection++;
+        }
+    }
+
+    // Calculate union
+    unordered_set<string> unionSet;
+    unionSet.insert(set1.begin(), set1.end());
+    unionSet.insert(set2.begin(), set2.end());
+    int unionSize = unionSet.size();
+
+    if (unionSize == 0) return 0.0;
+
+    return static_cast<double>(intersection) / unionSize;
+}
+
+/// <summary>
+/// Loads conversation corpus from human_chat_corpus.txt file
+/// </summary>
+/// <param name="filename">Path to the corpus file</param>
+/// <returns>Vector of conversation pairs</returns>
+inline vector<ConversationPair> loadConversationCorpus(const string& filename) {
+    vector<ConversationPair> corpus;
+    ifstream file(filename);
+    string line;
+
+    ConversationPair currentPair;
+
+    while (getline(file, line)) {
+        if (line.find("Human 1:") == 0) {
+            if (!currentPair.human1.empty()) {
+                corpus.push_back(currentPair);
+            }
+            currentPair.human1 = line.substr(8); // Remove "Human 1:"
+            currentPair.human2 = "";
+        }
+        else if (line.find("Human 2:") == 0) {
+            currentPair.human2 = line.substr(8); // Remove "Human 2:"
+            corpus.push_back(currentPair);
+            currentPair = ConversationPair();
+        }
+    }
+
+    // Add the last pair if exists
+    if (!currentPair.human1.empty()) {
+        corpus.push_back(currentPair);
+    }
+
+    return corpus;
+}
+
+/// <summary>
+/// Gets response using IoU matching with conversation corpus
+/// </summary>
+/// <param name="corpus">Loaded conversation corpus</param>
+/// <param name="userInput">User's input message</param>
+/// <returns>Best matching response from corpus</returns>
+inline string getResponseByIoU(const vector<ConversationPair>& corpus, const string& userInput) {
+    if (corpus.empty()) {
+        return "I'm still learning to chat. How can I help with your loan today?";
+    }
+
+    double bestIoU = 0.0;
+    string bestResponse = corpus[0].human2; // Default response
+
+    for (const auto& pair : corpus) {
+        double iou = calculateIoU(userInput, pair.human1);
+        if (iou > bestIoU) {
+            bestIoU = iou;
+            bestResponse = pair.human2;
+        }
+    }
+
+    // Set a threshold for minimum IoU score
+    if (bestIoU < 0.1) {
+        return "I'm not sure I understand. Could you rephrase that, or would you like help with a loan application?";
+    }
+
+    return bestResponse;
 }
 
 #endif
