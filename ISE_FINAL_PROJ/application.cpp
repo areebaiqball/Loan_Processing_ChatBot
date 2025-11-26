@@ -90,8 +90,24 @@ void LoanApplication::setApplicationId(const string& id) {
 }
 
 void LoanApplication::setStatus(const string& stat) {
-    if (stat != "submitted" && stat != "approved" && stat != "rejected") {
-        throw ValidationException("Invalid status value");
+    // Allow both final statuses and checkpoint statuses
+    vector<string> validStatuses = {
+        "submitted", "approved", "rejected",
+        "C1", "C2", "C3",
+        "incomplete_personal", "incomplete_financial",
+        "incomplete_references", "incomplete_documents"
+    };
+
+    bool valid = false;
+    for (const auto& s : validStatuses) {
+        if (s == stat) {
+            valid = true;
+            break;
+        }
+    }
+
+    if (!valid) {
+        throw ValidationException("Invalid status value: " + stat);
     }
     status = stat;
 }
@@ -462,32 +478,6 @@ void LoanApplication::setRejectionReason(const string& reason) {
 }
 
 
-void LoanApplication::markSectionCompleted(const string& section) {
-    if (!isSectionCompleted(section)) {
-        if (!completedSections.empty()) {
-            completedSections += ",";
-        }
-        completedSections += section;
-    }
-
-    // Update overall status based on completed sections
-    if (section == "personal") {
-        status = "incomplete_financial";
-    }
-    else if (section == "financial") {
-        status = "incomplete_references";
-    }
-    else if (section == "references") {
-        status = "incomplete_documents";
-    }
-    else if (section == "documents") {
-        status = "submitted";
-        if (submissionDate.empty()) {
-            submissionDate = getCurrentDate();
-        }
-    }
-}
-
 bool LoanApplication::isSectionCompleted(const string& section) const {
     return completedSections.find(section) != string::npos;
 }
@@ -505,17 +495,7 @@ vector<string> LoanApplication::getIncompleteSections() const {
     return incomplete;
 }
 
-bool LoanApplication::isApplicationComplete() const {
-    return status == "submitted" || status == "approved" || status == "rejected";
-}
 
-string LoanApplication::getNextIncompleteSection() const {
-    if (!isSectionCompleted("personal")) return "personal";
-    if (!isSectionCompleted("financial")) return "financial";
-    if (!isSectionCompleted("references")) return "references";
-    if (!isSectionCompleted("documents")) return "documents";
-    return "complete";
-}
 
 string LoanApplication::getCompletedSections() const {
     return completedSections;
@@ -641,4 +621,58 @@ bool LoanApplication::validateIncomeToLoanRatio(long long loanAmount, Validation
     }
 
     return true;
+}
+
+
+bool LoanApplication::isApplicationComplete() const {
+    vector<string> completeStatuses = { "submitted", "approved", "rejected" };
+    for (const auto& s : completeStatuses) {
+        if (status == s) return true;
+    }
+    return false;
+}
+
+string LoanApplication::getNextIncompleteSection() const {
+    if (status == "C1" || status == "incomplete_personal" || !isSectionCompleted("personal")) {
+        return "personal";
+    }
+    if (status == "C2" || status == "incomplete_financial" || !isSectionCompleted("financial")) {
+        return "financial";
+    }
+    if (status == "C3" || !isSectionCompleted("references")) {
+        return "references";
+    }
+    if (status == "incomplete_documents" || !isSectionCompleted("documents")) {
+        return "documents";
+    }
+    return "complete";
+}
+/// <summary>
+/// Marks a section as completed and updates the application status
+/// </summary>
+/// <param name="section">The section to mark as completed</param>
+void LoanApplication::markSectionCompleted(const string& section) {
+    if (!isSectionCompleted(section)) {
+        if (!completedSections.empty()) {
+            completedSections += ",";
+        }
+        completedSections += section;
+    }
+
+    // Update status based on checkpoints
+    if (section == "personal") {
+        status = "C2"; // Checkpoint 2 - Financial info needed
+    }
+    else if (section == "financial") {
+        status = "C3"; // Checkpoint 3 - References needed
+    }
+    else if (section == "references") {
+        status = "incomplete_documents"; // Documents needed
+    }
+    else if (section == "documents") {
+        status = "submitted"; // Fully submitted
+        if (submissionDate.empty()) {
+            submissionDate = getCurrentDate();
+        }
+    }
 }

@@ -15,12 +15,17 @@ class MultiSessionCollector {
 private:
     ApplicationCollector baseCollector;
     FileManager& fileManager;
+    LoanApplication currentApplication;
 
     bool collectPersonalInfo(LoanApplication& application);
     bool collectFinancialInfo(LoanApplication& application);
     bool collectReferencesInfo(LoanApplication& application);
     bool collectDocumentsInfo(LoanApplication& application);
     bool saveSectionAndContinue(LoanApplication& application, const string& section);
+
+    // Helper methods for better UX
+    string getStatusDescription(const string& status) const;
+    string getSectionDisplayName(const string& section) const;
 
 public:
     MultiSessionCollector(FileManager& fm) : fileManager(fm) {}
@@ -29,7 +34,6 @@ public:
     void displayApplicationProgress(const LoanApplication& application);
     void startNewApplication();
     void resumeExistingApplication();
-    void checkApplicationStatus();
 };
 
 #endif

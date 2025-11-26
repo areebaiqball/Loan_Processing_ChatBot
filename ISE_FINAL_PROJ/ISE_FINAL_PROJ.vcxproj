@@ -56,11 +56,12 @@
     <ClCompile Include="utterances.cpp" />
     <ClCompile Include="user_client.cpp" />
     <ClCompile Include="user_main.cpp" />
+    <ClCompile Include="multi_session_collector.cpp" />
   </ItemGroup>
   <!-- LenderServer: Include ONLY lender files -->
   <ItemGroup Condition="'$(Configuration)'=='LenderServer'">
     <ClCompile Include="application.cpp" />
-    <ClCompile Include="application_collector.cpp" />
+    <ClCompile Include="application_collector.cpp" /> 
     <ClCompile Include="car.cpp" />
     <ClCompile Include="file_manager.cpp" />
     <ClCompile Include="home.cpp" />
@@ -72,7 +73,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="file_manager_multi_session.cpp" />
-    <ClCompile Include="multi_session_collector.cpp" />
   </ItemGroup>
   <!-- Output directories -->
   <PropertyGroup Condition="'$(Configuration)'=='UserClient'">

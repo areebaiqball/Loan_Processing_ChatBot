@@ -16,7 +16,7 @@ private:
     bool copyImageFile(const string& sourcePath, const string& destinationPath) const;
     string applicationToFileFormat(const LoanApplication& application) const;
     LoanApplication applicationFromFileFormat(const vector<string>& parts) const;
-
+    LoanApplication handleOldFormat(const vector<string>& parts) const;
 public:
     FileManager(const string& appsFile = "applications.txt",
         const string& imagesDir = "images/");

@@ -246,7 +246,7 @@ public:
     bool validateIncomeForLoanType(const string& loanType, long long loanAmount, ValidationResult& result) const;
 
     // Multi-session methods
-    void markSectionCompleted(const string& section);
+   void markSectionCompleted(const string& section);
     bool isSectionCompleted(const string& section) const;
     vector<string> getIncompleteSections() const;
     bool isApplicationComplete() const;
@@ -257,6 +257,11 @@ public:
     ValidationResult validatePersonalInfo() const;
     ValidationResult validateFinancialInfo() const;
     ValidationResult validateDocuments() const;
+
+   
+        void setFieldDirect(const string& field, const string& value);
+
+        friend class FileManager;
 };
 
 #endif

@@ -302,80 +302,10 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
 
         try {
             vector<string> parts = splitString(line, Config::DELIMITER);
-            if (parts.size() >= 25) {
-                LoanApplication app;
+            LoanApplication app = applicationFromFileFormat(parts);
 
-                // Basic application data
-                app.setApplicationId(parts[0]);
-                app.setStatus(parts[1]);
-                app.setSubmissionDate(parts[2]);
-
-                // Personal information
-                app.setFullName(parts[3]);
-                app.setFathersName(parts[4]);
-                app.setPostalAddress(parts[5]);
-                app.setContactNumber(parts[6]);
-                app.setEmailAddress(parts[7]);
-                app.setCnicNumber(parts[8]);
-                app.setCnicExpiryDate(parts[9]);
-
-                // Employment & Financial
-                app.setEmploymentStatus(parts[10]);
-                app.setMaritalStatus(parts[11]);
-                app.setGender(parts[12]);
-
-                try { if (!parts[13].empty()) app.setNumberOfDependents(stoi(parts[13])); }
-                catch (...) {}
-                try { if (!parts[14].empty()) app.setAnnualIncome(stoll(parts[14])); }
-                catch (...) {}
-                try { if (!parts[15].empty()) app.setAvgElectricityBill(stoll(parts[15])); }
-                catch (...) {}
-                try { if (!parts[16].empty()) app.setCurrentElectricityBill(stoll(parts[16])); }
-                catch (...) {}
-
-                // Loan details
-                if (parts.size() > 17) app.setLoanType(parts[17]);
-                if (parts.size() > 18) app.setLoanCategory(parts[18]);
-
-                try {
-                    if (parts.size() > 19 && !parts[19].empty())
-                        app.setLoanAmount(stoll(parts[19]));
-                }
-                catch (...) {}
-
-                try {
-                    if (parts.size() > 20 && !parts[20].empty())
-                        app.setDownPayment(stoll(parts[20]));
-                }
-                catch (...) {}
-
-                try {
-                    if (parts.size() > 21 && !parts[21].empty())
-                        app.setInstallmentMonths(stoi(parts[21]));
-                }
-                catch (...) {}
-
-                try {
-                    if (parts.size() > 22 && !parts[22].empty())
-                        app.setMonthlyPayment(stoll(parts[22]));
-                }
-                catch (...) {}
-
-                try {
-                    if (parts.size() > 23 && !parts[23].empty())
-                        app.setInstallmentStartMonth(stoi(parts[23]));
-                }
-                catch (...) {}
-
-                try {
-                    if (parts.size() > 24 && !parts[24].empty())
-                        app.setInstallmentStartYear(stoi(parts[24]));
-                }
-                catch (...) {}
-
-                if (app.getCnicNumber() == cnic) {
-                    results.push_back(app);
-                }
+            if (!app.getApplicationId().empty() && app.getCnicNumber() == cnic) {
+                results.push_back(app);
             }
         }
         catch (const exception& e) {
@@ -386,7 +316,6 @@ vector<LoanApplication> FileManager::findApplicationsByCNIC(const string& cnic) 
     file.close();
     return results;
 }
-
 void FileManager::getApplicationStatsByCNIC(const string& cnic, int& submitted, int& approved, int& rejected) const {
     submitted = approved = rejected = 0;
 
@@ -735,46 +664,120 @@ string FileManager::applicationToFileFormat(const LoanApplication& application) 
 
     return ss.str();
 }
+LoanApplication FileManager::handleOldFormat(const vector<string>& parts) const {
+    LoanApplication app;
 
+    try {
+        // Old format: parts[0]=ID, parts[1]=status, parts[2]=date, parts[3]=name (no completed sections)
+        app.applicationId = parts[0];
+        app.status = parts[1];
+        app.submissionDate = parts[2];
+
+        // Personal information (shifted by 1 because no completed sections field)
+        if (parts.size() > 3) app.fullName = parts[3];
+        if (parts.size() > 4) app.fathersName = parts[4];
+        if (parts.size() > 5) app.postalAddress = parts[5];
+        if (parts.size() > 6) app.contactNumber = parts[6];
+        if (parts.size() > 7) app.emailAddress = parts[7];
+        if (parts.size() > 8) app.cnicNumber = parts[8];
+        if (parts.size() > 9) app.cnicExpiryDate = parts[9];
+        if (parts.size() > 10) app.employmentStatus = parts[10];
+        if (parts.size() > 11) app.maritalStatus = parts[11];
+        if (parts.size() > 12) app.gender = parts[12];
+
+        // Determine completed sections based on available data
+        string completed = "";
+        if (!app.fullName.empty() && !app.cnicNumber.empty()) {
+            completed = "personal";
+            // Try to detect if financial info is also present
+            if (parts.size() > 14 && !parts[14].empty() && parts[14] != "0") {
+                completed += ",financial";
+            }
+        }
+        app.completedSections = completed;
+
+    }
+    catch (const exception& e) {
+        cerr << "Error handling old format: " << e.what() << endl;
+    }
+
+    return app;
+}
 LoanApplication FileManager::applicationFromFileFormat(const vector<string>& parts) const {
     LoanApplication app;
 
-    if (parts.size() < 28) return app; // Minimum required fields
+    if (parts.size() < 4) return app; // At least ID, status, date, completed sections
 
     try {
-        // Basic application data
-        app.setApplicationId(parts[0]);
-        app.setStatus(parts[1]);
-        app.setSubmissionDate(parts[2]);
-        app.setCompletedSections(parts[3]);
+        // Basic application data - set directly to avoid validation errors
+        app.applicationId = parts[0];
+        app.status = parts[1];
+        app.submissionDate = parts[2];
+        app.completedSections = parts[3];
 
-        // Personal information
-        app.setFullName(parts[4]);
-        app.setFathersName(parts[5]);
-        app.setPostalAddress(parts[6]);
-        app.setContactNumber(parts[7]);
-        app.setEmailAddress(parts[8]);
-        app.setCnicNumber(parts[9]);
-        app.setCnicExpiryDate(parts[10]);
-        app.setEmploymentStatus(parts[11]);
-        app.setMaritalStatus(parts[12]);
-        app.setGender(parts[13]);
+        // Check if this is an old format (without completed sections)
+        bool isOldFormat = (parts.size() >= 17 && parts[3].find(',') == string::npos &&
+            parts[3] != "personal" && parts[3] != "financial" &&
+            parts[3] != "references" && parts[3] != "documents");
 
-        if (!parts[14].empty()) app.setNumberOfDependents(stoi(parts[14]));
-        if (!parts[15].empty()) app.setAnnualIncome(stoll(parts[15]));
-        if (!parts[16].empty()) app.setAvgElectricityBill(stoll(parts[16]));
-        if (!parts[17].empty()) app.setCurrentElectricityBill(stoll(parts[17]));
+        if (isOldFormat) {
+            // Handle old format - shift all fields
+            return handleOldFormat(parts);
+        }
+
+        // New format with completed sections
+        if (parts.size() > 4 && !parts[4].empty()) app.fullName = parts[4];
+        if (parts.size() > 5 && !parts[5].empty()) app.fathersName = parts[5];
+        if (parts.size() > 6 && !parts[6].empty()) app.postalAddress = parts[6];
+        if (parts.size() > 7 && !parts[7].empty()) app.contactNumber = parts[7];
+        if (parts.size() > 8 && !parts[8].empty()) app.emailAddress = parts[8];
+        if (parts.size() > 9 && !parts[9].empty()) app.cnicNumber = parts[9];
+        if (parts.size() > 10 && !parts[10].empty()) app.cnicExpiryDate = parts[10];
+        if (parts.size() > 11 && !parts[11].empty()) app.employmentStatus = parts[11];
+        if (parts.size() > 12 && !parts[12].empty()) app.maritalStatus = parts[12];
+        if (parts.size() > 13 && !parts[13].empty()) app.gender = parts[13];
+
+        // Numeric fields with safe conversion
+        if (parts.size() > 14 && !parts[14].empty()) {
+            try { app.numberOfDependents = stoi(parts[14]); }
+            catch (...) {}
+        }
+        if (parts.size() > 15 && !parts[15].empty()) {
+            try { app.annualIncome = stoll(parts[15]); }
+            catch (...) {}
+        }
+        if (parts.size() > 16 && !parts[16].empty()) {
+            try { app.avgElectricityBill = stoll(parts[16]); }
+            catch (...) {}
+        }
+        if (parts.size() > 17 && !parts[17].empty()) {
+            try { app.currentElectricityBill = stoll(parts[17]); }
+            catch (...) {}
+        }
 
         // Loan details
-        if (parts.size() > 18) app.setLoanType(parts[18]);
-        if (parts.size() > 19) app.setLoanCategory(parts[19]);
-        if (parts.size() > 20 && !parts[20].empty()) app.setLoanAmount(stoll(parts[20]));
-        if (parts.size() > 21 && !parts[21].empty()) app.setDownPayment(stoll(parts[21]));
-        if (parts.size() > 22 && !parts[22].empty()) app.setInstallmentMonths(stoi(parts[22]));
-        if (parts.size() > 23 && !parts[23].empty()) app.setMonthlyPayment(stoll(parts[23]));
+        if (parts.size() > 18 && !parts[18].empty()) app.loanType = parts[18];
+        if (parts.size() > 19 && !parts[19].empty()) app.loanCategory = parts[19];
+
+        if (parts.size() > 20 && !parts[20].empty()) {
+            try { app.loanAmount = stoll(parts[20]); }
+            catch (...) {}
+        }
+        if (parts.size() > 21 && !parts[21].empty()) {
+            try { app.downPayment = stoll(parts[21]); }
+            catch (...) {}
+        }
+        if (parts.size() > 22 && !parts[22].empty()) {
+            try { app.installmentMonths = stoi(parts[22]); }
+            catch (...) {}
+        }
+        if (parts.size() > 23 && !parts[23].empty()) {
+            try { app.monthlyPayment = stoll(parts[23]); }
+            catch (...) {}
+        }
 
         // Rejection reason
-        if (parts.size() > 26 && !parts[26].empty()) app.setRejectionReason(parts[26]);
+        if (parts.size() > 26 && !parts[26].empty()) app.rejectionReason = parts[26];
 
         // Existing loans
         if (parts.size() > 27) {
@@ -785,13 +788,18 @@ LoanApplication FileManager::applicationFromFileFormat(const vector<string>& par
             int index = 28;
             for (int i = 0; i < loanCount && index + 5 < parts.size(); i++) {
                 ExistingLoan loan;
-                loan.isActive = (parts[index] == "1" || toLower(parts[index]) == "true");
-                loan.totalAmount = stoll(parts[index + 1]);
-                loan.amountReturned = stoll(parts[index + 2]);
-                loan.amountDue = stoll(parts[index + 3]);
-                loan.bankName = parts[index + 4];
-                loan.loanCategory = parts[index + 5];
-                app.addExistingLoan(loan);
+                try {
+                    loan.isActive = (parts[index] == "1" || toLower(parts[index]) == "true");
+                    loan.totalAmount = stoll(parts[index + 1]);
+                    loan.amountReturned = stoll(parts[index + 2]);
+                    loan.amountDue = stoll(parts[index + 3]);
+                    loan.bankName = parts[index + 4];
+                    loan.loanCategory = parts[index + 5];
+                    app.existingLoans.push_back(loan);
+                }
+                catch (...) {
+                    // Skip invalid loan data
+                }
                 index += 6;
             }
 
@@ -803,7 +811,7 @@ LoanApplication FileManager::applicationFromFileFormat(const vector<string>& par
                 ref1.cnicIssueDate = parts[index + 2];
                 ref1.phoneNumber = parts[index + 3];
                 ref1.email = parts[index + 4];
-                app.setReference1(ref1);
+                app.reference1 = ref1;
 
                 Reference ref2;
                 ref2.name = parts[index + 5];
@@ -811,16 +819,7 @@ LoanApplication FileManager::applicationFromFileFormat(const vector<string>& par
                 ref2.cnicIssueDate = parts[index + 7];
                 ref2.phoneNumber = parts[index + 8];
                 ref2.email = parts[index + 9];
-                app.setReference2(ref2);
-                index += 10;
-            }
-
-            // Image paths
-            if (index + 3 < parts.size()) {
-                app.setCnicFrontImagePath(parts[index]);
-                app.setCnicBackImagePath(parts[index + 1]);
-                app.setElectricityBillImagePath(parts[index + 2]);
-                app.setSalarySlipImagePath(parts[index + 3]);
+                app.reference2 = ref2;
             }
         }
 
@@ -830,6 +829,63 @@ LoanApplication FileManager::applicationFromFileFormat(const vector<string>& par
     }
 
     return app;
+}
+// Add/Update these methods in file_manager.cpp
+
+LoanApplication FileManager::findIncompleteApplication(const string& applicationId, const string& cnic) const {
+    vector<LoanApplication> allApplications = loadAllApplications();
+
+    for (size_t i = 0; i < allApplications.size(); i++) {
+        const LoanApplication& app = allApplications[i];
+
+        // Check if IDs match and application is incomplete
+        if (app.getApplicationId() == applicationId &&
+            app.getCnicNumber() == cnic) {
+
+            string status = app.getStatus();
+            // Application is incomplete if status is C1, C2, C3, or incomplete_*
+            bool isIncomplete = (status == "C1" || status == "C2" || status == "C3" ||
+                status == "incomplete_personal" ||
+                status == "incomplete_financial" ||
+                status == "incomplete_references" ||
+                status == "incomplete_documents");
+
+            if (isIncomplete) {
+                return app;
+            }
+        }
+    }
+
+    return LoanApplication(); // Return empty if not found or complete
+}
+
+vector<LoanApplication> FileManager::findUserIncompleteApplications(const string& cnic) const {
+    vector<LoanApplication> allApplications = loadAllApplications();
+    vector<LoanApplication> incompleteApps;
+
+    for (size_t i = 0; i < allApplications.size(); i++) {
+        const LoanApplication& app = allApplications[i];
+
+        if (app.getCnicNumber() == cnic) {
+            string status = app.getStatus();
+            bool isIncomplete = (status == "C1" || status == "C2" || status == "C3" ||
+                status == "incomplete_personal" ||
+                status == "incomplete_financial" ||
+                status == "incomplete_references" ||
+                status == "incomplete_documents");
+
+            if (isIncomplete) {
+                incompleteApps.push_back(app);
+            }
+        }
+    }
+
+    return incompleteApps;
+}
+
+bool FileManager::canUpdateApplication(const string& applicationId, const string& cnic) const {
+    LoanApplication app = findIncompleteApplication(applicationId, cnic);
+    return !app.getApplicationId().empty();
 }
 
 bool FileManager::updateApplicationSection(const LoanApplication& application, const string& section) {
@@ -844,14 +900,17 @@ bool FileManager::updateApplicationSection(const LoanApplication& application, c
     string line;
     bool found = false;
 
+    // Read all existing applications
     while (getline(file, line)) {
         if (line.empty()) continue;
 
         vector<string> parts = splitString(line, Config::DELIMITER);
         if (!parts.empty() && parts[0] == application.getApplicationId()) {
-            // Replace with updated application
+            // Found the application - update it
             LoanApplication updatedApp = application;
-            updatedApp.markSectionCompleted(section);
+            if (!section.empty()) {
+                updatedApp.markSectionCompleted(section);
+            }
             string updatedLine = applicationToFileFormat(updatedApp);
             lines.push_back(updatedLine);
             found = true;
@@ -862,10 +921,12 @@ bool FileManager::updateApplicationSection(const LoanApplication& application, c
     }
     file.close();
 
+    // If not found, add as new application
     if (!found) {
-        // Application doesn't exist yet, add it
         LoanApplication newApp = application;
-        newApp.markSectionCompleted(section);
+        if (!section.empty()) {
+            newApp.markSectionCompleted(section);
+        }
         lines.push_back(applicationToFileFormat(newApp));
         found = true;
     }
@@ -882,46 +943,11 @@ bool FileManager::updateApplicationSection(const LoanApplication& application, c
     }
     outFile.close();
 
-    cout << "✓ Section '" << section << "' saved successfully for application "
-        << application.getApplicationId() << endl;
+    if (!section.empty()) {
+        cout << "✓ Progress saved at checkpoint: " << section << endl;
+    }
     return true;
-}
-
-// Multi-session support methods - SINGLE IMPLEMENTATION ONLY
-LoanApplication FileManager::findIncompleteApplication(const string& applicationId, const string& cnic) const {
-    vector<LoanApplication> allApplications = loadAllApplications();
-
-    for (size_t i = 0; i < allApplications.size(); i++) {
-        const LoanApplication& app = allApplications[i];
-        if (app.getApplicationId() == applicationId &&
-            app.getCnicNumber() == cnic &&
-            !app.isApplicationComplete()) {
-            return app;
-        }
-    }
-
-    return LoanApplication(); // Return empty application if not found
-}
-
-vector<LoanApplication> FileManager::findUserIncompleteApplications(const string& cnic) const {
-    vector<LoanApplication> allApplications = loadAllApplications();
-    vector<LoanApplication> incompleteApps;
-
-    for (size_t i = 0; i < allApplications.size(); i++) {
-        const LoanApplication& app = allApplications[i];
-        if (app.getCnicNumber() == cnic && !app.isApplicationComplete()) {
-            incompleteApps.push_back(app);
-        }
-    }
-
-    return incompleteApps;
-}
-
-bool FileManager::canUpdateApplication(const string& applicationId, const string& cnic) const {
-    LoanApplication app = findIncompleteApplication(applicationId, cnic);
-    return !app.getApplicationId().empty() && !app.isApplicationComplete();
-}
-
+} 
 // Update loadAllApplications to use new format
 vector<LoanApplication> FileManager::loadAllApplications() const {
     vector<LoanApplication> applications;
