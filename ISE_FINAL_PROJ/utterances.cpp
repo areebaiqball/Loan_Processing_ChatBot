@@ -7,18 +7,14 @@ Utterance::Utterance() {
     input = "";
     response = "";
 }
-
 Utterance::Utterance(const string& inp, const string& resp) {
     input = inp;
     response = resp;
 }
-
 string Utterance::getInput() const { return input; }
 string Utterance::getResponse() const { return response; }
-
 void Utterance::setInput(const string& inp) { input = inp; }
 void Utterance::setResponse(const string& resp) { response = resp; }
-
 int loadUtterances(Utterance utterances[], int maxSize, const string& filename) {
     ifstream file(filename);
 
@@ -54,7 +50,6 @@ int loadUtterances(Utterance utterances[], int maxSize, const string& filename) 
     file.close();
     return count;
 }
-
 string getResponse(const Utterance utterances[], int size, const string& input) {
     string lowerInput = toLower(trim(input));
 

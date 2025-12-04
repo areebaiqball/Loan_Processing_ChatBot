@@ -30,7 +30,6 @@ void displayLenderMenu() {
     cout << "=================================" << endl;
 }
 
-
 void viewAllApplications(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
 
@@ -221,6 +220,7 @@ void reviewAndProcessApplications(FileManager& fileManager) {
         }
     }
 }
+
 void displayApplicationStatistics(FileManager& fileManager) {
     auto allApplications = fileManager.loadAllApplications();
     int submitted = 0, approved = 0, rejected = 0;

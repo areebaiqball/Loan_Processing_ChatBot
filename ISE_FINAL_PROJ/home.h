@@ -37,11 +37,8 @@ public:
     void displayInstallmentPlan() const;
 
 };
-
 int loadHomeLoans(HomeLoan loans[], int maxSize, const string& filename);
-
 bool displayHomeLoanOptions(const HomeLoan loans[], int size, const string& areaNumber);
-
 bool displayInstallmentPlanForOption(const HomeLoan loans[], int size,
     const string& areaNumber, int optionNumber);
 

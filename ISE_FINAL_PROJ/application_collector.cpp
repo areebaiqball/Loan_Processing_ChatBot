@@ -1044,28 +1044,6 @@ string ApplicationCollector::getImagePath(const string& imageType) {
     return ""; // If all attempts failed
 }
 
-bool ApplicationCollector::collectReferenceDocuments(LoanApplication& application) {
-    cout << endl << "=== REFERENCE DOCUMENTS ===" << endl;
-
-    try {
-        cout << Config::CHATBOT_NAME << ": " << "Now we need CNIC images for your references." << endl;
-
-        cout << endl << "--- Reference 1 CNIC ---" << endl;
-        string ref1CnicFront = getImagePath("Reference 1 CNIC Front Side");
-        string ref1CnicBack = getImagePath("Reference 1 CNIC Back Side");
-
-        cout << endl << "--- Reference 2 CNIC ---" << endl;
-        string ref2CnicFront = getImagePath("Reference 2 CNIC Front Side");
-        string ref2CnicBack = getImagePath("Reference 2 CNIC Back Side");
-
-        cout << Config::CHATBOT_NAME << ": " << "Reference documents recorded successfully!" << endl;
-        return true;
-    }
-    catch (const exception& e) {
-        cout << Config::CHATBOT_NAME << ": " << "Error in reference documents: " << e.what() << endl;
-        return false;
-    }
-}
 
 bool ApplicationCollector::collectFinancialDocuments(LoanApplication& application) {
     cout << endl << "=== ADDITIONAL FINANCIAL DOCUMENTS ===" << endl;

@@ -35,12 +35,6 @@ private:
     bool saveSectionAndContinue(LoanApplication& application, const string& section);
 
     /// <summary>
-    /// Displays loan type selection for personal loans
-    /// </summary>
-    /// <param name="application">Application to update with loan type</param>
-    void selectPersonalLoanType(LoanApplication& application);
-
-    /// <summary>
     /// Gets user-friendly status description
     /// </summary>
     /// <param name="status">Internal status code</param>

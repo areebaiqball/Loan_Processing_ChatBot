@@ -17,7 +17,6 @@ private:
     bool collectReferencesInfo(LoanApplication& application);
     bool confirmApplication(const LoanApplication& application);
     bool collectImagePaths(LoanApplication& application);
-    bool collectReferenceDocuments(LoanApplication& application);
     bool collectFinancialDocuments(LoanApplication& application);
     void collectInstallmentStartDate(LoanApplication& application);
     bool getValidatedYesNo(const string& prompt);

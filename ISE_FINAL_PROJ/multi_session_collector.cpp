@@ -17,7 +17,6 @@ void MultiSessionCollector::showApplicationMenu() {
     cout << "========================================" << endl;
     cout << Config::CHATBOT_NAME << ": Please choose an option (1-5): ";
 }
-
 void MultiSessionCollector::displayApplicationProgress(const LoanApplication& application) {
     cout << endl << "========================================" << endl;
     cout << "   APPLICATION PROGRESS REPORT" << endl;
@@ -44,7 +43,6 @@ void MultiSessionCollector::displayApplicationProgress(const LoanApplication& ap
     }
     cout << "========================================" << endl;
 }
-
 string MultiSessionCollector::getStatusDescription(const string& status) const {
     if (status == "incomplete_personal" || status == "C1") return "Personal Info Needed";
     if (status == "incomplete_financial" || status == "C2") return "Financial Info Needed";
@@ -55,75 +53,12 @@ string MultiSessionCollector::getStatusDescription(const string& status) const {
     if (status == "rejected") return "Rejected";
     return status;
 }
-
 string MultiSessionCollector::getSectionDisplayName(const string& section) const {
     if (section == "personal") return "Personal Information";
     if (section == "financial") return "Financial Information";
     if (section == "references") return "References";
     if (section == "documents") return "Documents";
     return section;
-}
-
-void MultiSessionCollector::selectPersonalLoanType(LoanApplication& application) {
-    cout << endl << "========================================" << endl;
-    cout << "   PERSONAL LOAN TYPE SELECTION" << endl;
-    cout << "========================================" << endl;
-    cout << Config::CHATBOT_NAME << ": What type of personal loan do you need?" << endl << endl;
-
-    // You'll need to load personal loans here or pass them as parameter
-    // For now, let's create a simple selection
-    cout << "1. Standard Personal Loan - For any personal financial needs" << endl;
-    cout << "2. Education Loan - For tuition, books, and educational expenses" << endl;
-    cout << "3. Medical Loan - For medical treatments and healthcare expenses" << endl;
-    cout << "4. Wedding Loan - For marriage and wedding expenses" << endl;
-    cout << "5. Emergency Loan - For urgent and unexpected expenses" << endl;
-    cout << "6. Home Renovation - For renovating or improving your home" << endl;
-
-    cout << endl << Config::CHATBOT_NAME << ": Please choose an option (1-6): ";
-
-    string loanChoice;
-    if (!getline(cin, loanChoice)) {
-        cout << Config::CHATBOT_NAME << ": Input error. Using standard personal loan." << endl;
-        application.setLoanCategory("Standard Personal Loan");
-        return;
-    }
-
-    loanChoice = trim(loanChoice);
-
-    if (loanChoice == "1") {
-        application.setLoanCategory("Standard Personal Loan");
-        cout << Config::CHATBOT_NAME << ": Standard Personal Loan selected." << endl;
-    }
-    else if (loanChoice == "2") {
-        application.setLoanCategory("Education Loan");
-        cout << Config::CHATBOT_NAME << ": Education Loan selected." << endl;
-    }
-    else if (loanChoice == "3") {
-        application.setLoanCategory("Medical Loan");
-        cout << Config::CHATBOT_NAME << ": Medical Loan selected." << endl;
-    }
-    else if (loanChoice == "4") {
-        application.setLoanCategory("Wedding Loan");
-        cout << Config::CHATBOT_NAME << ": Wedding Loan selected." << endl;
-    }
-    else if (loanChoice == "5") {
-        application.setLoanCategory("Emergency Loan");
-        cout << Config::CHATBOT_NAME << ": Emergency Loan selected." << endl;
-    }
-    else if (loanChoice == "6") {
-        application.setLoanCategory("Home Renovation");
-        cout << Config::CHATBOT_NAME << ": Home Renovation Loan selected." << endl;
-    }
-    else {
-        cout << Config::CHATBOT_NAME << ": Invalid choice. Using Standard Personal Loan." << endl;
-        application.setLoanCategory("Standard Personal Loan");
-    }
-
-    // Set default values for personal loan
-    application.setLoanAmount(500000);
-    application.setDownPayment(50000);
-    application.setInstallmentMonths(36);
-    application.setMonthlyPayment(12500);
 }
 void MultiSessionCollector::startNewApplication() {
     try {
@@ -500,7 +435,6 @@ void MultiSessionCollector::resumeExistingApplication() {
         cout << "========================================" << endl;
     }
 }
-
 bool MultiSessionCollector::collectPersonalInfo(LoanApplication& application) {
     cout << endl << Config::CHATBOT_NAME << ": Let's start with your personal information." << endl;
     cout << Config::CHATBOT_NAME << ": This helps us understand you better!" << endl << endl;
@@ -789,7 +723,6 @@ bool MultiSessionCollector::collectDocumentsInfo(LoanApplication& application) {
         return false;
     }
 }
-
 bool MultiSessionCollector::saveSectionAndContinue(LoanApplication& application, const string& section) {
     // Move section progression logic here if needed
     if (section == "personal") {
